@@ -19,7 +19,7 @@ export const SEARCH_ENGINES: Record<string, { name: string; url: string }> = {
 export const HITOKOTO_API = 'https://v1.hitokoto.cn/';
 
 export const DEFAULT_CONFIG = {
-	backgroundType: 'url',
+	backgroundType: 'preset',
 	backgroundImage: 'images/img1.png',
 	searchEngine: 'baidu',
 	quoteEnabled: true,
@@ -33,6 +33,6 @@ export const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
 export const IMAGE_HOSTS = ['unsplash', 'pexels', 'pixabay', 'imgur'];
 
-export type BackgroundType = 'gradient' | 'local' | 'url';
+export type BackgroundType = 'gradient' | 'preset' | 'local' | 'url';
 export type QuickAccessPosition = 'top' | 'bottom';
 export type QuoteTypes = string[];

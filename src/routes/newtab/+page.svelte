@@ -38,9 +38,13 @@
 	class="fixed inset-0 -z-10 bg-cover bg-center animate-[fade-blur-in_0.65s_cubic-bezier(0.25,0.46,0.45,0.94)_forwards]"
 	style="background-image: {$backgroundStyle || 'linear-gradient(135deg, rgba(91,134,229,0.6) 0%, rgba(54,209,220,0.6) 100%)'}"
 ></div>
+<!-- 使用图片背景时叠加暗色调层，提升文字可读性 -->
+{#if $backgroundStyle}
+	<div class="fixed inset-0 -z-10 bg-black/35"></div>
+{/if}
 
 <!-- 主内容：时间+搜索固定在顶部，一言区域预留固定高度保证布局不跳动、与 dock 之间始终保留空隙 -->
-<main class="relative flex min-h-screen flex-col items-center px-5 pt-[16vh] text-white">
+<main class="relative flex min-h-screen flex-col items-center px-5 pt-[21vh] text-white">
 	<TimeDisplay />
 	<SearchBar />
 
@@ -57,19 +61,21 @@
 
 <!-- 浮动操作按钮 -->
 <div class="fixed bottom-7 right-7 z-40 flex gap-3 animate-[fade_0.5s_ease-in-out]">
-	<button
-		type="button"
-		title="刷新一言"
-		aria-label="刷新一言"
-		class="w-12 h-12 rounded-full glass border border-white/20 text-white flex items-center justify-center cursor-pointer transition hover:bg-[#399fff]/30 hover:-translate-y-0.5 focus:outline-2 focus:outline-[#399fff] active:scale-95"
-		onclick={() => quote.refresh()}
-	>
-		<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-			<polyline points="23 4 23 10 17 10"></polyline>
-			<polyline points="1 20 1 14 7 14"></polyline>
-			<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-		</svg>
-	</button>
+	{#if $settings.quoteEnabled}
+		<button
+			type="button"
+			title="刷新一言"
+			aria-label="刷新一言"
+			class="w-12 h-12 rounded-full glass border border-white/20 text-white flex items-center justify-center cursor-pointer transition hover:bg-[#399fff]/30 hover:-translate-y-0.5 focus:outline-2 focus:outline-[#399fff] active:scale-95"
+			onclick={() => quote.refresh()}
+		>
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<polyline points="23 4 23 10 17 10"></polyline>
+				<polyline points="1 20 1 14 7 14"></polyline>
+				<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+			</svg>
+		</button>
+	{/if}
 	<button
 		type="button"
 		title="设置"

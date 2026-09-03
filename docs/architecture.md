@@ -6,7 +6,7 @@
 
 TSTab 是一个浏览器「新标签页」扩展（Chrome MV3），使用 **SvelteKit（adapter-static，全预渲染）+ Svelte 5 + Tailwind CSS v4 + DaisyUI 5（dark 主题）** 构建。它是原生 HTML/CSS/JS 实现的参考扩展 [Snow](https://github.com/ltba/Snow) 的现代化重写，功能与视觉基本保持一致。
 
-核心功能：实时时间、多引擎智能搜索（可识别网址直达）、每日一言（hitokoto API + 本地缓存）、自定义背景（渐变 / 本地图片 / URL）、macOS 风格快捷访问 Dock、复制保护、配置导入/导出。
+核心功能：实时时间、多引擎智能搜索（可识别网址直达）、每日一言（hitokoto API + 本地缓存）、自定义背景（默认渐变 / 默认图片 / 本地图片 / URL）、macOS 风格快捷访问 Dock、复制保护、配置导入/导出。
 
 ## 2 分层架构
 
@@ -58,7 +58,7 @@ src/
   routes/
     +layout.js             # export const prerender = true（全部路由预渲染）
     +layout.svelte         # 引入 app.css，透传 slot
-    newtab/+page.svelte    # 新标签页：加载 settings/quickAccess，组装全部组件
+    newtab/+page.svelte    # 新标签页：加载 settings/quickAccess，组装全部组件（backgroundType 为图片时叠加暗色调覆盖层）
     popup/+page.svelte     # 弹窗：读取当前标签页（chrome.tabs.query），添加/移除快捷访问
 static/
   manifest.json           # MV3 清单（构建时被 patch-manifest.mjs 补写 CSP 后复制到 build/）

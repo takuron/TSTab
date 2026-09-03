@@ -34,7 +34,12 @@
 
 	/* ---------- 背景 ---------- */
 	function setBgType(type) {
-		settings.save({ backgroundType: type });
+		// 默认图片模式需带上内置图片路径
+		if (type === 'preset') {
+			settings.save({ backgroundType: 'preset', backgroundImage: 'images/img1.png' });
+		} else {
+			settings.save({ backgroundType: type });
+		}
 	}
 
 	async function handleUrlApply() {
@@ -68,12 +73,6 @@
 			event.target.value = '';
 		};
 		reader.readAsDataURL(file);
-	}
-
-	async function handleResetBg() {
-		if (!window.confirm('确定要恢复默认背景吗？')) return;
-		await settings.save({ backgroundType: 'gradient', backgroundImage: '' });
-		alertMsg('已恢复默认背景');
 	}
 
 	/* ---------- 一言 ---------- */
@@ -229,6 +228,10 @@
 								默认渐变
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
+								<input type="radio" class="radio radio-primary" name="bgtype" value="preset" checked={$settings.backgroundType === 'preset'} onchange={() => setBgType('preset')} />
+								默认图片
+							</label>
+							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
 								<input type="radio" class="radio radio-primary" name="bgtype" value="local" checked={$settings.backgroundType === 'local'} onchange={() => setBgType('local')} />
 								本地图片
 							</label>
@@ -256,10 +259,6 @@
 							<p class="mt-1 text-xs text-white/60">图片必须允许跨域访问（CORS）</p>
 						</div>
 					{/if}
-
-					<div>
-						<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleResetBg}>恢复默认背景</button>
-					</div>
 				</section>
 
 				<!-- 搜索设置 -->

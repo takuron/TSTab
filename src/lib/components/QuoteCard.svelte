@@ -6,7 +6,7 @@
 	{#if $quote.loading}
 		<p class="text-base lg:text-lg font-light italic text-white/70">加载中...</p>
 	{:else}
-		<p class="text-lg lg:text-xl font-light italic leading-relaxed text-white drop-shadow mb-3">
+		<p class="text-base lg:text-lg font-light italic leading-relaxed text-white drop-shadow mb-3">
 			“{$quote.text}”
 		</p>
 		{#if $quote.source}
