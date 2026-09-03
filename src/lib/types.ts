@@ -26,4 +26,5 @@ export interface Settings {
 	quoteTypes: string[];
 	copyProtection: boolean;
 	quickAccessPosition: 'top' | 'bottom';
+	locale: string;
 }

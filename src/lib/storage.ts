@@ -141,10 +141,11 @@ export const StorageManager = {
 			backgroundImage: STORAGE_KEYS.BACKGROUND_IMAGE,
 			searchEngine: STORAGE_KEYS.SEARCH_ENGINE,
 			quoteEnabled: STORAGE_KEYS.QUOTE_ENABLED,
-			quoteTypes: STORAGE_KEYS.QUOTE_TYPES,
-			copyProtection: STORAGE_KEYS.COPY_PROTECTION,
-			quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION
-		};
+		quoteTypes: STORAGE_KEYS.QUOTE_TYPES,
+		copyProtection: STORAGE_KEYS.COPY_PROTECTION,
+		quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION,
+		locale: STORAGE_KEYS.LOCALE
+	};
 		const updates: Record<string, unknown> = {};
 		for (const key of Object.keys(DEFAULT_CONFIG) as (keyof typeof DEFAULT_CONFIG)[]) {
 			const storageKey = configKeyMap[key];

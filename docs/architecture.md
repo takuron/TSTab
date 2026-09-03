@@ -40,24 +40,29 @@ TSTab 是一个浏览器「新标签页」扩展（Chrome MV3），使用 **Svel
 ```
 src/
   app.css                 # Tailwind/DaisyUI 入口 + 设计令牌 + glass 工具类 + 关键帧动画 + #snow-cursor 样式
-  app.html                # SvelteKit HTML 模板（lang=zh-CN, data-theme=dark）
+  app.html                # SvelteKit HTML 模板（data-theme=dark；lang 由客户端按 locale 动态写入）
   lib/
     config.ts             # STORAGE_KEYS、SEARCH_ENGINES、DEFAULT_CONFIG、CACHE_EXPIRY 等常量与类型别名
     types.ts              # QuickAccessItem / Hitokoto / QuoteCache / Settings 接口
     storage.ts            # StorageManager：chrome.storage.local 封装，非扩展环境降级 localStorage
     stores.ts             # settings / quickAccess / quote 三个 store 及 applyPosition / faviconUrl 工具函数
     search.ts             # normalizeUrlOrNull / buildSearchUrl
+    i18n/
+      index.js            # svelte-i18n 初始化：注册语言包、init、与 settings.locale 偏好同步、resolveLocale
+      locales/
+        zh-CN.json        # 简体中文语言包（默认 / fallback）
+        en-US.json        # 英文语言包
     components/
-      TimeDisplay.svelte      # 时间与日期，每秒 setInterval 刷新
+      TimeDisplay.svelte      # 时间与日期（日期按当前 locale 格式化），每秒 setInterval 刷新
       SearchBar.svelte        # 搜索输入 + 引擎切换（DaisyUI dropdown），提交后 window.location 跳转
       QuoteCard.svelte        # 一言展示（纯展示，数据来自 quote store）
       QuickAccessDock.svelte  # 底部/顶部 Dock，位置由 settings.quickAccessPosition 控制
-      SettingsModal.svelte    # 设置弹窗：背景、引擎、一言、快捷访问增删改拖拽排序、配置导入/导出
+      SettingsModal.svelte    # 设置弹窗：语言、背景、引擎、一言、快捷访问增删改拖拽排序、配置导入/导出
       Cursor.svelte           # 自定义圆点光标（仅桌面端 >768px，lerp 平滑跟随，直接操作 DOM）
       Security.svelte         # 复制保护：按 settings.copyProtection 动态挂载/卸载 contextmenu/copy/cut/keydown 监听
   routes/
     +layout.js             # export const prerender = true（全部路由预渲染）
-    +layout.svelte         # 引入 app.css，透传 slot
+    +layout.svelte         # 引入 app.css、导入 i18n（副作用）、同步 <html lang>，透传 slot
     newtab/+page.svelte    # 新标签页：加载 settings/quickAccess，组装全部组件（backgroundType 为图片时叠加暗色调覆盖层）
     popup/+page.svelte     # 弹窗：读取当前标签页（chrome.tabs.query），添加/移除快捷访问
 static/
@@ -82,7 +87,7 @@ scripts/
 
 - 键名统一定义在 `config.ts` 的 `STORAGE_KEYS`（如 `backgroundType`、`quickAccess`、`quoteCache` 等），**禁止**在别处硬编码字符串键。
 - 默认值统一定义在 `config.ts` 的 `DEFAULT_CONFIG`；`StorageManager.initDefaults()` 在 `settings.load()` 时仅补写缺失键。
-- 新增设置项时需同步修改：`DEFAULT_CONFIG`、`STORAGE_KEYS`、`SettingsState`（stores.ts）、`settings` store 的 `load()`/`save()` 映射、以及 `SettingsModal` 的 UI。
+- 新增设置项时需同步修改：`DEFAULT_CONFIG`、`STORAGE_KEYS`、`SettingsState`（stores.ts）、`settings` store 的 `load()`/`save()` 映射、以及 `SettingsModal` 的 UI（若为语言类配置见第 9 节）。
 
 ### 5.2 store 契约
 
@@ -124,3 +129,33 @@ SvelteKit 预渲染页面内含客户端挂载所需的内联 `<script>`，而 M
 - 毛玻璃：`.glass`（blur 10px）与 `.glass-strong`（blur 24px）为 `@layer components` 工具类。
 - `body` 保持透明、深色兜底放在 `html` 上——避免不透明背景盖住 `fixed -z-10` 的背景图层。改动背景层时必须保留此结构。
 - 自定义光标 `#snow-cursor` 使用 `mix-blend-mode: difference`，样式在 `app.css`，逻辑在 `Cursor.svelte`。
+
+## 9 国际化（i18n）
+
+TSTab 使用 **`svelte-i18n`**（主流 SvelteKit 客户端国际化方案）实现多语言，而非自研方案。所有界面文案通过 `$_('key')` 按当前语言响应式输出，语言切换即时生效、无需刷新。
+
+### 9.1 模块与目录
+
+- `src/lib/i18n/index.js`：初始化入口，模块加载即执行——注册语言包（`addMessages`）、调用 `init({ fallbackLocale: 'zh-CN' })`，并与 `settings` store 的 `locale` 偏好做双向同步。
+- `src/lib/i18n/locales/zh-CN.json` / `en-US.json`：两套平行的语言包（默认中文，`zh-CN` 兼作 fallback）。键采用点分（如 `settings.title`）、`{var}` 插值。
+- `src/routes/+layout.svelte`：`import '$lib/i18n'`（副作用初始化）+ 订阅 svelte-i18n 的 `locale` 以动态写入 `<html lang>`。
+
+### 9.2 语言偏好与解析
+
+- 设置项 `settings.locale`（存储键 `locale`）取值：`'browser'`（默认，跟随浏览器）| `'zh-CN'` | `'en-US'`。
+- `resolveLocale(pref)` 负责解析：固定语言直接返回；`browser`/空值回退到 `getLocaleFromNavigator()`，非浏览器环境回退 `zh-CN`。
+- `settings.save({ locale });` 触发 store 更新 → i18n 订阅自动 `locale.set(...)`，全站文案与 `<html lang>` 随之切换。
+
+### 9.3 使用规范（LLM 与开发者必须遵守）
+
+1. **禁止硬编码用户可感知的中文文案**。所有出现在 UI 的字符串（含 `title`/`aria-label`/`placeholder`/`alert`/`confirm` 文本）一律通过 `$_('key')` 读取；JS 函数内的提示用 `$_('msg.xxx', { vars })` 插值。
+2. **新增/修改文案必须同步两份语言包**：先在 `zh-CN.json` 增加 key，再在 `en-US.json` 补全对应英文，保证键名与层级一致；缺失时会在运行时回退 `zh-CN`，但文档规范要求始终补齐。
+3. **组件内使用**：模板与脚本统一 `import { _ } from 'svelte-i18n'` 后用 `$_('key')`。注意 `$_` 是 Svelte 自动订阅语法，仅对字面命名为 `_` 的 store 生效，**禁止改名为 `_t` 等别名**。
+4. **语言相关逻辑放在 `i18n/index.js`**；`stores.ts` 中需要取文案处（如一言的兜底文案 / loading）用 `get(_)('key')`（`_` 是 function store）。
+5. **命名空间**：顶级按模块分组 `engine / search / quote / newtab / common / settings / msg / popup / qaDock`；`msg.*` 专放 `alert`/`confirm` 等脚本提示，`settings.*` 放设置面板，`popup.*` 放工具栏弹窗。
+6. **manifest 与品牌**：`static/manifest.json` 的 `name`/`description` 为静态品牌文案（`_locales` 未启用），暂不随语言设置切换，正文界面不依赖此处。
+
+### 9.4 注意事项
+
+- `_` 目录限制：`svelte-i18n` 运行时依赖 `intl-messageformat` / `es5-ext`（已加入 `pnpm-workspace.yaml` 的 `allowBuilds`）。语言包为 JSON 静态资源，经 Vite 打包进客户端 chunk，无额外网络请求。
+- 预渲染：页面在服务端以 `initialLocale: 'zh-CN'` 预渲染，客户端 hydration 后按偏好切换到正确语言（跟随浏览器或固定语言），符合扩展的无路由、运行时切换场景。

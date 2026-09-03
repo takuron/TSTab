@@ -7,7 +7,8 @@ export const STORAGE_KEYS = {
 	QUOTE_TYPES: 'quoteTypes',
 	COPY_PROTECTION: 'copyProtection',
 	QUICK_ACCESS: 'quickAccess',
-	QUICK_ACCESS_POSITION: 'quickAccessPosition'
+	QUICK_ACCESS_POSITION: 'quickAccessPosition',
+	LOCALE: 'locale'
 } as const;
 
 export const SEARCH_ENGINES: Record<string, { name: string; url: string }> = {
@@ -25,7 +26,8 @@ export const DEFAULT_CONFIG = {
 	quoteEnabled: true,
 	quoteTypes: ['a', 'b', 'c', 'd', 'i'],
 	copyProtection: true,
-	quickAccessPosition: 'bottom'
+	quickAccessPosition: 'bottom',
+	locale: 'browser'
 } as const;
 
 export const CACHE_EXPIRY = 60 * 60 * 1000;

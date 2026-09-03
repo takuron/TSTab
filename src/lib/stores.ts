@@ -1,4 +1,5 @@
 import { derived, get, writable } from 'svelte/store';
+import { _ as _t } from 'svelte-i18n';
 import {
 	CACHE_EXPIRY,
 	DEFAULT_CONFIG,
@@ -33,6 +34,7 @@ interface SettingsState {
 	quoteTypes: string[];
 	copyProtection: boolean;
 	quickAccessPosition: QuickAccessPosition;
+	locale: string;
 	ready: boolean;
 }
 
@@ -44,6 +46,7 @@ const defaults: SettingsState = {
 	quoteTypes: [...DEFAULT_CONFIG.quoteTypes],
 	copyProtection: DEFAULT_CONFIG.copyProtection,
 	quickAccessPosition: DEFAULT_CONFIG.quickAccessPosition as QuickAccessPosition,
+	locale: DEFAULT_CONFIG.locale,
 	ready: false
 };
 
@@ -66,6 +69,7 @@ function createSettingsStore() {
 					items[STORAGE_KEYS.QUICK_ACCESS_POSITION],
 					defaults.quickAccessPosition
 				) as QuickAccessPosition,
+				locale: useFallback(items[STORAGE_KEYS.LOCALE], defaults.locale) as string,
 				ready: true
 			});
 		},
@@ -80,7 +84,8 @@ function createSettingsStore() {
 				[STORAGE_KEYS.QUOTE_ENABLED]: next.quoteEnabled,
 				[STORAGE_KEYS.QUOTE_TYPES]: next.quoteTypes,
 				[STORAGE_KEYS.COPY_PROTECTION]: next.copyProtection,
-				[STORAGE_KEYS.QUICK_ACCESS_POSITION]: next.quickAccessPosition
+				[STORAGE_KEYS.QUICK_ACCESS_POSITION]: next.quickAccessPosition,
+				[STORAGE_KEYS.LOCALE]: next.locale
 			});
 		}
 	};
@@ -172,6 +177,15 @@ interface QuoteState {
 }
 
 function createQuoteStore() {
+	// 取当前语言的翻译文本；未加载时回退到 key 本身，避免抛出异常。
+	const msg = (key: string): string => {
+		try {
+			return get(_t)(key);
+		} catch {
+			return key;
+		}
+	};
+
 	const { subscribe, set } = writable<QuoteState>({ text: '加载中...', source: '', loading: false });
 
 	async function fetchQuote(): Promise<Hitokoto> {
@@ -192,7 +206,7 @@ function createQuoteStore() {
 	}
 
 	async function load(): Promise<void> {
-		set({ text: '加载中...', source: '', loading: true });
+		set({ text: msg('quote.loading'), source: '', loading: true });
 		try {
 			const cached = (await StorageManager.get(STORAGE_KEYS.QUOTE_CACHE)) as QuoteCache | undefined;
 			if (cached && cached.data && Date.now() - cached.timestamp < CACHE_EXPIRY) {
@@ -205,8 +219,8 @@ function createQuoteStore() {
 		} catch (err) {
 			console.error('获取一言失败:', err);
 			display({
-				hitokoto: '世界上只有一种真正的英雄主义，那就是认清生活的真相后依然热爱生活。',
-				from: '罗曼·罗兰'
+				hitokoto: msg('quote.fallbackText'),
+				from: msg('quote.author')
 			});
 		}
 	}

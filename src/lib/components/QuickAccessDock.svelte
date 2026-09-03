@@ -1,4 +1,5 @@
 <script>
+	import { _ } from 'svelte-i18n';
 	import { quickAccess } from '$lib/stores';
 
 	// 记录每个快捷访问图标是否加载失败，失败的用占位球兜底
@@ -7,7 +8,7 @@
 
 {#if $quickAccess.length > 0}
 	<nav
-		aria-label="快捷访问"
+		aria-label={$_('qaDock.aria')}
 		class="fixed left-1/2 -translate-x-1/2 z-40 flex items-end gap-3 px-5 py-3 glass rounded-[25px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] bottom-5 animate-[slide-up_0.4s_ease-out]"
 	>
 		{#each $quickAccess as item (item.url)}

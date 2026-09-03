@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { _ } from 'svelte-i18n';
 	import QuickAccessDock from '$lib/components/QuickAccessDock.svelte';
 	import QuoteCard from '$lib/components/QuoteCard.svelte';
 	import SearchBar from '$lib/components/SearchBar.svelte';
@@ -30,7 +31,7 @@
 </script>
 
 <svelte:head>
-	<title>新标签页</title>
+	<title>{$_('newtab.title')}</title>
 </svelte:head>
 
 <!-- 背景 -->
@@ -64,8 +65,8 @@
 	{#if $settings.quoteEnabled}
 		<button
 			type="button"
-			title="刷新一言"
-			aria-label="刷新一言"
+			title={$_('newtab.refreshQuote')}
+			aria-label={$_('newtab.refreshQuote')}
 			class="w-12 h-12 rounded-full glass border border-white/20 text-white flex items-center justify-center cursor-pointer transition hover:bg-[#399fff]/30 hover:-translate-y-0.5 focus:outline-2 focus:outline-[#399fff] active:scale-95"
 			onclick={() => quote.refresh()}
 		>
@@ -78,8 +79,8 @@
 	{/if}
 	<button
 		type="button"
-		title="设置"
-		aria-label="打开设置"
+		title={$_('newtab.settings')}
+		aria-label={$_('newtab.openSettingsAria')}
 		class="w-12 h-12 rounded-full glass border border-white/20 text-white flex items-center justify-center cursor-pointer transition hover:bg-[#399fff]/30 hover:-translate-y-0.5 focus:outline-2 focus:outline-[#399fff] active:scale-95"
 		onclick={() => (openSettings = true)}
 	>

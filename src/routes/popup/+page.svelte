@@ -1,9 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
+	import { _ } from 'svelte-i18n';
 	import { faviconUrl, quickAccess } from '$lib/stores';
 	import { isExtension } from '$lib/storage';
 
-	let tab = { title: '加载中...', url: '', icon: '' };
+	let tab = { title: $_('popup.loadingTab'), url: '', icon: '' };
 	let loaded = false;
 	let exists = false;
 	let working = false;
@@ -14,18 +15,18 @@
 		if (isExtension()) {
 			const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
 			if (!active) {
-				showStatus('无法获取当前标签页信息', 'error');
+				showStatus($_('popup.statusNoTab'), 'error');
 				return;
 			}
 			tab = {
-				title: active.title || '未知网站',
+				title: active.title || $_('popup.unknownTab'),
 				url: active.url || '',
 				icon: faviconFor(active.url, active.favIconUrl)
 			};
 		} else {
 			// 开发调试：以当前地址作为示例
 			tab = {
-				title: '本地预览（非扩展环境）',
+				title: $_('popup.previewTab'),
 				url: window.location.href,
 				icon: ''
 			};
@@ -63,32 +64,32 @@
 				icon: tab.icon,
 				addedAt: Date.now()
 			});
-			if (ok) showStatus('添加成功！', 'success');
-			else showStatus('该网站已在快捷访问中', 'info');
-		} catch (err) {
-			console.error(err);
-			showStatus('添加失败，请重试', 'error');
-		}
-		working = false;
+		if (ok) showStatus($_('popup.statusAdded'), 'success');
+		else showStatus($_('popup.statusAlready'), 'info');
+	} catch (err) {
+		console.error(err);
+		showStatus($_('popup.statusAddFailed'), 'error');
 	}
+	working = false;
+}
 
-	async function handleRemove() {
-		if (working || !tab.url) return;
-		working = true;
-		try {
-			const index = $quickAccess.findIndex((it) => it.url === tab.url);
-			if (index === -1) {
-				showStatus('该网站不在快捷访问中', 'info');
-			} else {
-				await quickAccess.remove(index);
-				showStatus('移除成功！', 'success');
-			}
-		} catch (err) {
-			console.error(err);
-			showStatus('移除失败，请重试', 'error');
+async function handleRemove() {
+	if (working || !tab.url) return;
+	working = true;
+	try {
+		const index = $quickAccess.findIndex((it) => it.url === tab.url);
+		if (index === -1) {
+			showStatus($_('popup.statusNotIn'), 'info');
+		} else {
+			await quickAccess.remove(index);
+			showStatus($_('popup.statusRemoved'), 'success');
 		}
-		working = false;
+	} catch (err) {
+		console.error(err);
+		showStatus($_('popup.statusRemoveFailed'), 'error');
 	}
+	working = false;
+}
 
 	function hostOf(url) {
 		try {
@@ -100,13 +101,13 @@
 </script>
 
 <svelte:head>
-	<title>添加到快捷访问</title>
+	<title>{$_('popup.title')}</title>
 </svelte:head>
 
 <div class="w-[320px] min-h-[260px] font-sans text-white flex flex-col">
 	<!-- 头部 -->
 	<header class="px-4 py-3 bg-white/10 backdrop-blur-md border-b border-white/20">
-		<h2 class="text-base font-semibold">快捷访问</h2>
+		<h2 class="text-base font-semibold">{$_('popup.header')}</h2>
 	</header>
 
 	<!-- 内容 -->
@@ -139,7 +140,7 @@
 	<footer class="p-4 bg-white/5 backdrop-blur-md border-t border-white/10 space-y-2">
 		{#if !isExtension()}
 			<p class="text-xs text-white/80 text-center">
-				当前为非扩展环境，无法读取当前标签页。请在扩展中打开本弹窗使用。
+				{$_('popup.nonExt')}
 			</p>
 		{/if}
 		<button
@@ -149,7 +150,7 @@
 			disabled={working || !loaded}
 			onclick={handleAdd}
 		>
-			添加到快捷访问
+			{$_('popup.add')}
 		</button>
 		<button
 			type="button"
@@ -158,7 +159,7 @@
 			disabled={working || !loaded}
 			onclick={handleRemove}
 		>
-			从快捷访问移除
+			{$_('popup.remove')}
 		</button>
 	</footer>
 </div>

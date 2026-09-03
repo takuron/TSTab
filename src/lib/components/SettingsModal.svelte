@@ -1,16 +1,19 @@
 <script>
+	import { _ } from 'svelte-i18n';
 	import { MAX_IMAGE_SIZE } from '$lib/config';
+	import { SUPPORTED_LOCALES } from '$lib/i18n';
 	import { StorageManager } from '$lib/storage';
 	import { faviconUrl, quickAccess, quote, settings } from '$lib/stores';
 
 	export let open = false;
 
+	// 一言类型：value 为 hitokoto 的类型参数，key 指向对应翻译键
 	const QUOTE_TYPES = [
-		{ value: 'a', label: '动画' },
-		{ value: 'b', label: '漫画' },
-		{ value: 'c', label: '游戏' },
-		{ value: 'd', label: '文学' },
-		{ value: 'i', label: '诗词' }
+		{ value: 'a', key: 'anim' },
+		{ value: 'b', key: 'comic' },
+		{ value: 'c', key: 'game' },
+		{ value: 'd', key: 'literature' },
+		{ value: 'i', key: 'poetry' }
 	];
 
 	let bgUrlInput = '';
@@ -32,6 +35,10 @@
 		window.alert(msg);
 	}
 
+	function setLocale(value) {
+		settings.save({ locale: value });
+	}
+
 	/* ---------- 背景 ---------- */
 	function setBgType(type) {
 		// 默认图片模式需带上内置图片路径
@@ -44,32 +51,31 @@
 
 	async function handleUrlApply() {
 		const url = bgUrlInput.trim();
-		if (!url) return alertMsg('请输入图片 URL');
+		if (!url) return alertMsg($_('msg.bgUrlEmpty'));
 		try {
 			new URL(url);
 		} catch {
-			return alertMsg('请输入有效的 URL 地址');
+			return alertMsg($_('msg.bgUrlInvalid'));
 		}
 		const img = new Image();
 		img.onload = async () => {
 			await settings.save({ backgroundType: 'url', backgroundImage: url });
-			alertMsg('URL 图片已设置');
+			alertMsg($_('msg.bgUrlDone'));
 			bgUrlInput = '';
 		};
-		img.onerror = () =>
-			alertMsg('无法加载该图片，请检查 URL 是否正确或图片是否允许跨域访问');
+		img.onerror = () => alertMsg($_('msg.bgUrlFailed'));
 		img.src = url;
 	}
 
 	function handleFilePicked(event) {
 		const file = event.target.files?.[0];
 		if (!file) return;
-		if (!file.type.startsWith('image/')) return alertMsg('请选择图片文件');
-		if (file.size > MAX_IMAGE_SIZE) return alertMsg('图片文件过大，请选择小于 5MB 的图片');
+		if (!file.type.startsWith('image/')) return alertMsg($_('msg.bgFileType'));
+		if (file.size > MAX_IMAGE_SIZE) return alertMsg($_('msg.bgFileSize'));
 		const reader = new FileReader();
 		reader.onload = async (e) => {
 			await settings.save({ backgroundType: 'local', backgroundImage: e.target.result });
-			alertMsg('本地图片已设置');
+			alertMsg($_('msg.bgLocalDone'));
 			event.target.value = '';
 		};
 		reader.readAsDataURL(file);
@@ -78,31 +84,31 @@
 	/* ---------- 一言 ---------- */
 	async function handleClearQuoteCache() {
 		await quote.clearCache();
-		alertMsg('一言缓存已清除');
+		alertMsg($_('msg.quoteCacheCleared'));
 	}
 
 	/* ---------- 快捷访问 ---------- */
 	async function handleAddQa() {
 		const title = qaTitle.trim();
 		const url = qaUrl.trim();
-		if (!title) return alertMsg('请输入网站名称');
-		if (!url) return alertMsg('请输入网站地址');
+		if (!title) return alertMsg($_('msg.qaNameEmpty'));
+		if (!url) return alertMsg($_('msg.qaUrlEmpty'));
 		try {
 			new URL(url);
 		} catch {
-			return alertMsg('请输入有效的网站地址（如：https://github.com）');
+			return alertMsg($_('msg.qaUrlInvalid'));
 		}
 		const ok = await quickAccess.add({ title, url, icon: faviconUrl(url), addedAt: Date.now() });
 		if (ok) {
 			qaTitle = '';
 			qaUrl = '';
 		} else {
-			alertMsg('该网站已存在');
+			alertMsg($_('msg.qaExists'));
 		}
 	}
 
 	async function handleRemoveQa(index) {
-		if (!window.confirm('确定要删除这个快捷访问吗？')) return;
+		if (!window.confirm($_('msg.qaRemoveConfirm'))) return;
 		await quickAccess.remove(index);
 	}
 
@@ -113,12 +119,12 @@
 	}
 
 	async function saveEdit(index) {
-		if (!editTitle.trim()) return alertMsg('请输入网站名称');
-		if (!editUrl.trim()) return alertMsg('请输入网站地址');
+		if (!editTitle.trim()) return alertMsg($_('msg.qaNameEmpty'));
+		if (!editUrl.trim()) return alertMsg($_('msg.qaUrlEmpty'));
 		try {
 			new URL(editUrl);
 		} catch {
-			return alertMsg('请输入有效的网站地址（如：https://github.com）');
+			return alertMsg($_('msg.qaUrlInvalid'));
 		}
 		await quickAccess.updateItem(index, { title: editTitle.trim(), url: editUrl.trim() });
 		editingIndex = null;
@@ -152,7 +158,7 @@
 		a.click();
 		document.body.removeChild(a);
 		URL.revokeObjectURL(url);
-		alertMsg('配置已导出成功');
+		alertMsg($_('msg.exportDone'));
 	}
 
 	async function handleImport(event) {
@@ -160,17 +166,17 @@
 		if (!file) return;
 		if (!file.name.endsWith('.json')) {
 			event.target.value = '';
-			return alertMsg('请选择 JSON 格式的配置文件');
+			return alertMsg($_('msg.importFileType'));
 		}
 		try {
 			const text = await file.text();
 			const data = JSON.parse(text);
 			if (!data.config || typeof data.config !== 'object') {
-				return alertMsg('配置文件格式不正确');
+				return alertMsg($_('msg.importInvalid'));
 			}
 			const confirmMsg = data.exportDate
-				? `确定要导入配置吗？\n\n导出时间：${data.exportDate}\n\n导入后将覆盖当前所有设置。`
-				: '确定要导入配置吗？\n\n导入后将覆盖当前所有设置。';
+				? $_('msg.importConfirmWithDate', { time: data.exportDate })
+				: $_('msg.importConfirm');
 			if (!window.confirm(confirmMsg)) {
 				event.target.value = '';
 				return;
@@ -178,11 +184,11 @@
 			await StorageManager.setMultiple(data.config);
 			await settings.load();
 			await quickAccess.load();
-			alertMsg('配置已导入成功');
+			alertMsg($_('msg.importDone'));
 			close();
 		} catch (err) {
 			console.error('导入配置失败:', err);
-			alertMsg('导入配置失败，请检查文件格式是否正确');
+			alertMsg($_('msg.importFailed'));
 		}
 		event.target.value = '';
 	}
@@ -197,14 +203,14 @@
 			class="flex flex-col w-full max-w-[600px] max-h-[86vh] glass-strong rounded-xl border border-white/15 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] animate-[slide-in_0.3s_ease-out]"
 			role="dialog"
 			aria-modal="true"
-			aria-label="设置"
+			aria-label={$_('settings.dialogAria')}
 		>
 			<!-- 头部 -->
 			<div class="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-white/5 shrink-0">
-				<h2 class="text-xl font-semibold text-white m-0">设置</h2>
+				<h2 class="text-xl font-semibold text-white m-0">{$_('settings.title')}</h2>
 				<button
 					class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 hover:scale-110 flex items-center justify-center text-white transition cursor-pointer"
-					aria-label="关闭设置"
+					aria-label={$_('settings.closeAria')}
 					onclick={close}
 				>
 					<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -216,96 +222,111 @@
 
 			<!-- 内容 -->
 			<div class="flex-1 overflow-y-auto px-8 py-8">
+				<!-- 搜索与语言（首个设置项） -->
+				<section class="mb-8">
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.searchLanguageTitle')}</h3>
+					<div class="space-y-4">
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-white/80">{$_('settings.searchEngineLabel')}</span>
+							<select
+								class="select select-sm select-bordered bg-black text-white"
+								value={$settings.searchEngine}
+								onchange={(e) => settings.save({ searchEngine: e.currentTarget.value })}
+							>
+								<option value="baidu">{$_('engine.baidu')}</option>
+								<option value="google">{$_('engine.google')}</option>
+								<option value="bing">{$_('engine.bing')}</option>
+							</select>
+						</div>
+						<div class="flex items-center justify-between">
+							<span class="text-sm text-white/80">{$_('settings.language')}</span>
+							<select
+								class="select select-sm select-bordered bg-black text-white"
+								value={$settings.locale ?? 'browser'}
+								onchange={(e) => setLocale(e.currentTarget.value)}
+							>
+								<option value="browser">{$_('settings.languageBrowser')}</option>
+								{#each SUPPORTED_LOCALES as code}
+									<option value={code}>{$_('langs.' + code)}</option>
+								{/each}
+							</select>
+						</div>
+					</div>
+				</section>
+
 				<!-- 背景设置 -->
 				<section class="mb-8">
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">背景设置</h3>
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.bgTitle')}</h3>
 
 					<div class="mb-6">
-						<span class="block text-sm text-white/80 mb-2">背景类型</span>
+						<span class="block text-sm text-white/80 mb-2">{$_('settings.bgType')}</span>
 						<div class="flex flex-wrap gap-4">
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
 								<input type="radio" class="radio radio-primary" name="bgtype" value="gradient" checked={$settings.backgroundType === 'gradient'} onchange={() => setBgType('gradient')} />
-								默认渐变
+								{$_('settings.bgGradient')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
 								<input type="radio" class="radio radio-primary" name="bgtype" value="preset" checked={$settings.backgroundType === 'preset'} onchange={() => setBgType('preset')} />
-								默认图片
+								{$_('settings.bgPreset')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
 								<input type="radio" class="radio radio-primary" name="bgtype" value="local" checked={$settings.backgroundType === 'local'} onchange={() => setBgType('local')} />
-								本地图片
+								{$_('settings.bgLocal')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
 								<input type="radio" class="radio radio-primary" name="bgtype" value="url" checked={$settings.backgroundType === 'url'} onchange={() => setBgType('url')} />
-								URL 图片
+								{$_('settings.bgUrl')}
 							</label>
 						</div>
 					</div>
 
 					{#if $settings.backgroundType === 'local'}
 						<div class="mb-6">
-							<span class="block text-sm text-white/80 mb-2">上传本地图片</span>
-							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 border border-white/20 text-white" onclick={() => fileInput?.click()}>选择文件</button>
+							<span class="block text-sm text-white/80 mb-2">{$_('settings.bgUploadLocal')}</span>
+							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 border border-white/20 text-white" onclick={() => fileInput?.click()}>{$_('settings.bgChooseFile')}</button>
 							<input type="file" accept="image/*" bind:this={fileInput} class="hidden" onchange={handleFilePicked} />
-							<p class="mt-1 text-xs text-white/60">支持 JPG、PNG、GIF 等格式，建议 1920x1080 分辨率</p>
+							<p class="mt-1 text-xs text-white/60">{$_('settings.bgLocalHint')}</p>
 						</div>
 					{/if}
 
 					{#if $settings.backgroundType === 'url'}
 						<div class="mb-6">
-							<span class="block text-sm text-white/80 mb-2">图片 URL</span>
+							<span class="block text-sm text-white/80 mb-2">{$_('settings.bgUrlLabel')}</span>
 							<input type="text" bind:value={bgUrlInput} placeholder="https://example.com/image.jpg" class="input w-full mb-2 bg-white/10 border-transparent text-white placeholder:text-white/50" />
-							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={handleUrlApply}>应用</button>
-							<p class="mt-1 text-xs text-white/60">图片必须允许跨域访问（CORS）</p>
+							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={handleUrlApply}>{$_('common.apply')}</button>
+							<p class="mt-1 text-xs text-white/60">{$_('settings.bgUrlHint')}</p>
 						</div>
 					{/if}
 				</section>
 
-				<!-- 搜索设置 -->
-				<section class="mb-8">
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">搜索设置</h3>
-					<div class="flex items-center justify-between">
-						<span class="text-sm text-white/80">默认搜索引擎</span>
-						<select
-							class="select select-sm select-bordered bg-white/10 text-white"
-							value={$settings.searchEngine}
-							onchange={(e) => settings.save({ searchEngine: e.currentTarget.value })}
-						>
-							<option value="baidu">百度</option>
-							<option value="google">Google</option>
-							<option value="bing">Bing</option>
-						</select>
-					</div>
-				</section>
-
 				<!-- 快捷访问 -->
 				<section class="mb-8">
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">快捷访问</h3>
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.qaTitle')}</h3>
 
 					<div class="mb-6">
-						<span class="block text-sm text-white/80 mb-2">添加网站</span>
+						<span class="block text-sm text-white/80 mb-2">{$_('settings.qaAdd')}</span>
 						<div class="flex gap-2 mb-3">
-							<input type="text" bind:value={qaTitle} placeholder="网站名称（如：GitHub）" class="input input-sm flex-1 bg-white/10 text-white placeholder:text-white/50" />
+							<input type="text" bind:value={qaTitle} placeholder={$_('settings.qaNamePlaceholder')} class="input input-sm flex-1 bg-white/10 text-white placeholder:text-white/50" />
 							<input type="text" bind:value={qaUrl} placeholder="https://github.com" class="input input-sm flex-[2] bg-white/10 text-white placeholder:text-white/50" />
-							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={handleAddQa}>添加</button>
+							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={handleAddQa}>{$_('common.add')}</button>
 						</div>
-						<p class="text-xs text-white/60">提示：访问目标网站时，也可以点击扩展图标快速添加</p>
+						<p class="text-xs text-white/60">{$_('settings.qaAddHint')}</p>
 					</div>
 
 					<div>
-						<span class="block text-sm text-white/80 mb-2">已添加的网站（拖拽排序）</span>
+						<span class="block text-sm text-white/80 mb-2">{$_('settings.qaAdded')}</span>
 						<div class="flex flex-col gap-3">
 							{#if $quickAccess.length === 0}
-								<p class="text-xs text-white/60">暂无快捷访问网站</p>
+								<p class="text-xs text-white/60">{$_('settings.qaEmpty')}</p>
 							{/if}
 							{#each $quickAccess as item, index (item.url)}
 								{#if editingIndex === index}
 									<div class="rounded-lg border border-[#399fff]/40 bg-[#399fff]/10 p-3 flex flex-col gap-2">
-										<input type="text" bind:value={editTitle} placeholder="网站名称" class="input input-sm bg-white/10 text-white placeholder:text-white/50" />
-										<input type="text" bind:value={editUrl} placeholder="网站地址" class="input input-sm bg-white/10 text-white placeholder:text-white/50" />
+										<input type="text" bind:value={editTitle} placeholder={$_('settings.qaEditNamePlaceholder')} class="input input-sm bg-white/10 text-white placeholder:text-white/50" />
+										<input type="text" bind:value={editUrl} placeholder={$_('settings.qaEditUrlPlaceholder')} class="input input-sm bg-white/10 text-white placeholder:text-white/50" />
 										<div class="flex justify-end gap-2">
-											<button type="button" class="btn btn-xs bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={() => saveEdit(index)}>保存</button>
-											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => (editingIndex = null)}>取消</button>
+											<button type="button" class="btn btn-xs bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={() => saveEdit(index)}>{$_('common.save')}</button>
+											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => (editingIndex = null)}>{$_('common.cancel')}</button>
 										</div>
 									</div>
 								{:else}
@@ -326,8 +347,8 @@
 												type="button"
 												class="cursor-grab text-white/50 hover:text-white/90 select-none"
 												draggable="true"
-												title="拖拽排序"
-												aria-label="拖拽排序"
+												title={$_('settings.qaDragAria')}
+												aria-label={$_('settings.qaDragAria')}
 												ondragstart={() => (draggingIndex = index)}
 												ondragend={() => (draggingIndex = null)}
 											>
@@ -346,8 +367,8 @@
 											</div>
 										</div>
 										<div class="flex gap-2 shrink-0">
-											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => startEdit(index)}>编辑</button>
-											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => handleRemoveQa(index)}>删除</button>
+											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => startEdit(index)}>{$_('common.edit')}</button>
+											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => handleRemoveQa(index)}>{$_('common.remove')}</button>
 										</div>
 									</div>
 								{/if}
@@ -358,10 +379,10 @@
 
 				<!-- 每日一言 -->
 				<section class="mb-8">
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">每日一言</h3>
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.quoteTitle')}</h3>
 
 					<div class="mb-6 flex items-center justify-between">
-						<span class="text-sm text-white/80">显示每日一言</span>
+						<span class="text-sm text-white/80">{$_('settings.quoteShow')}</span>
 						<input
 							type="checkbox"
 							class="toggle toggle-primary"
@@ -371,7 +392,7 @@
 					</div>
 
 					<div class="mb-6">
-						<span class="block text-sm text-white/80 mb-2">一言类型</span>
+						<span class="block text-sm text-white/80 mb-2">{$_('settings.quoteTypesLabel')}</span>
 						<div class="flex flex-wrap gap-4">
 							{#each QUOTE_TYPES as qt (qt.value)}
 								<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
@@ -388,23 +409,23 @@
 											settings.save({ quoteTypes: next });
 										}}
 									/>
-									{qt.label}
+									{$_('quote.' + qt.key)}
 								</label>
 							{/each}
 						</div>
 					</div>
 
 					<div>
-						<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleClearQuoteCache}>清除一言缓存</button>
+						<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleClearQuoteCache}>{$_('settings.quoteClearCache')}</button>
 					</div>
 				</section>
 
 				<!-- 安全 -->
 				<section class="mb-8">
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">安全与隐私</h3>
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.securityTitle')}</h3>
 					<div>
 						<div class="flex items-center justify-between">
-							<span class="text-sm text-white/80">禁用文字复制</span>
+							<span class="text-sm text-white/80">{$_('settings.copyProtection')}</span>
 							<input
 								type="checkbox"
 								class="toggle toggle-primary"
@@ -412,38 +433,38 @@
 								onchange={(e) => settings.save({ copyProtection: e.currentTarget.checked })}
 							/>
 						</div>
-						<p class="mt-1 text-xs text-white/60">开启后无法选择和复制页面文字（输入框除外）</p>
+						<p class="mt-1 text-xs text-white/60">{$_('settings.copyProtectionHint')}</p>
 					</div>
 				</section>
 
 				<!-- 数据管理 -->
 				<section class="mb-8">
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">数据管理</h3>
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.dataTitle')}</h3>
 					<div>
-						<span class="block text-sm text-white/80 mb-2">配置备份与恢复</span>
+						<span class="block text-sm text-white/80 mb-2">{$_('settings.dataBackup')}</span>
 						<div class="flex gap-3">
-							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleExport}>导出配置</button>
-							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={() => importInput?.click()}>导入配置</button>
+							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleExport}>{$_('settings.export')}</button>
+							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={() => importInput?.click()}>{$_('settings.import')}</button>
 							<input type="file" accept=".json" bind:this={importInput} class="hidden" onchange={handleImport} />
 						</div>
-						<p class="mt-1 text-xs text-white/60">导出配置将保存所有设置到 JSON 文件，导入配置可恢复之前的设置</p>
+						<p class="mt-1 text-xs text-white/60">{$_('settings.dataHint')}</p>
 					</div>
 				</section>
 
 				<!-- 关于 -->
 				<section>
-					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">关于</h3>
+					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.aboutTitle')}</h3>
 					<div class="text-sm text-white/80 space-y-1">
 						<p class="font-semibold text-white">TSTab</p>
-						<p>基于 SvelteKit + Tailwind CSS v4 + DaisyUI 5 重写的简洁新标签页</p>
-						<p>功能参考 <a href="https://github.com/ltba/Snow" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Snow</a></p>
+						<p>{$_('settings.aboutDesc')}</p>
+						<p>{$_('settings.aboutRef')} <a href="https://github.com/ltba/Snow" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Snow</a></p>
 					</div>
 				</section>
 			</div>
 
 			<!-- 底部 -->
 			<div class="flex gap-3 px-8 py-6 bg-white/5 border-t border-white/10 shrink-0">
-				<button type="button" class="btn btn-md flex-1 bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={close}>完成</button>
+				<button type="button" class="btn btn-md flex-1 bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={close}>{$_('common.done')}</button>
 			</div>
 		</div>
 	</div>

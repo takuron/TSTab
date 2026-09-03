@@ -1,4 +1,5 @@
 <script>
+	import { _ } from 'svelte-i18n';
 	import { SEARCH_ENGINES } from '$lib/config';
 	import { buildSearchUrl } from '$lib/search';
 	import { settings } from '$lib/stores';
@@ -30,9 +31,9 @@
 		<input
 			bind:value={query}
 			type="text"
-			placeholder="搜索或输入网址..."
+			placeholder={$_('search.placeholder')}
 			autocomplete="off"
-			aria-label="搜索输入框"
+			aria-label={$_('search.inputAria')}
 			class="flex-1 bg-transparent outline-none px-5 py-3 text-base text-white placeholder:text-white/60 select-text"
 		/>
 
@@ -42,9 +43,9 @@
 				type="button"
 				tabindex="0"
 				class="flex items-center gap-1 glass text-white text-sm px-3 py-2 rounded-full border border-transparent hover:border-white/30 hover:bg-white/10 cursor-pointer focus:outline-2 focus:outline-[#399fff]"
-				aria-label="选择搜索引擎"
+				aria-label={$_('search.engineAria')}
 			>
-				<span>{SEARCH_ENGINES[$settings.searchEngine]?.name ?? '搜索'}</span>
+				<span>{$_('engine.' + $settings.searchEngine)}</span>
 				<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 					<polyline points="6 9 1 4 11 4"></polyline>
 				</svg>
@@ -61,7 +62,7 @@
 								{$settings.searchEngine === value ? 'bg-[#399fff]/20 text-white font-medium' : ''}"
 							onclick={() => pickEngine(value)}
 						>
-							{def.name}
+							{$_('engine.' + value)}
 						</button>
 					</li>
 				{/each}
