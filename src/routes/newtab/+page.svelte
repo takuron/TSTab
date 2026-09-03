@@ -7,7 +7,7 @@
 	import Security from '$lib/components/Security.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import TimeDisplay from '$lib/components/TimeDisplay.svelte';
-	import { backgroundStyle, quickAccess, quote, settings } from '$lib/stores';
+	import { backgroundStyle, bookmarkDock, quickAccess, quote, settings } from '$lib/stores';
 
 	let openSettings = false;
 	let quoteEnabledRef = false;
@@ -16,6 +16,11 @@
 		await settings.load();
 		await quickAccess.load();
 	});
+
+	// 快捷访问开启书签模式时，随文件夹变化同步加载书签 Dock。
+	$: if ($settings.ready && $settings.quickAccessMode === 'bookmark') {
+		bookmarkDock.load($settings.bookmarkFolderId);
+	}
 
 	// 首次就绪或“从关闭变为开启”时加载一言
 	$: {

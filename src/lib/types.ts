@@ -5,6 +5,13 @@ export interface QuickAccessItem {
 	addedAt: number;
 }
 
+/** 书签文件夹下拉选项：供设置面板选择“用哪个书签文件夹作为 Dock 来源” */
+export interface BookmarkFolderOption {
+	id: string;
+	title: string;
+	path: string;
+}
+
 export interface QuoteCache {
 	data: Hitokoto;
 	timestamp: number;
@@ -26,5 +33,7 @@ export interface Settings {
 	quoteTypes: string[];
 	copyProtection: boolean;
 	quickAccessPosition: 'top' | 'bottom';
+	quickAccessMode: 'manual' | 'bookmark';
+	bookmarkFolderId: string | null;
 	locale: string;
 }

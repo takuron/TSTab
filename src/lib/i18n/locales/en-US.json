@@ -71,6 +71,13 @@
 		"qaEditNamePlaceholder": "Site name",
 		"qaEditUrlPlaceholder": "Site URL",
 		"qaDragAria": "Drag to reorder",
+		"qaMode": "Quick access mode",
+		"qaModeManual": "Manual",
+		"qaModeBookmark": "Bookmark folder",
+		"qaBookmarkFolder": "Choose a bookmark folder",
+		"qaBookmarkFolderPlaceholder": "Select a folder",
+		"qaBookmarkHint": "Shows only the direct bookmark links in this folder, not subfolders. Reopen a new tab to see changes after editing bookmarks.",
+		"qaBookmarkNonExt": "Bookmarks are only available in the extension environment. Load the extension to use this feature.",
 		"quoteTitle": "Daily quote",
 		"quoteShow": "Show daily quote",
 		"quoteTypesLabel": "Quote types",
@@ -85,6 +92,7 @@
 		"dataHint": "Export saves all settings to a JSON file; import restores them.",
 		"aboutTitle": "About",
 		"aboutDesc": "A minimal new tab rebuilt with SvelteKit + Tailwind CSS v4 + DaisyUI 5",
+		"aboutImage": "Default background:",
 		"aboutRef": "Inspired by"
 	},
 	"msg": {

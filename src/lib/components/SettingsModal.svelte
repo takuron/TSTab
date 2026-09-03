@@ -2,8 +2,8 @@
 	import { _ } from 'svelte-i18n';
 	import { MAX_IMAGE_SIZE } from '$lib/config';
 	import { SUPPORTED_LOCALES } from '$lib/i18n';
-	import { StorageManager } from '$lib/storage';
-	import { faviconUrl, quickAccess, quote, settings } from '$lib/stores';
+	import { isExtension, StorageManager } from '$lib/storage';
+	import { bookmarkDock, faviconUrl, quickAccess, quote, settings } from '$lib/stores';
 
 	export let open = false;
 
@@ -26,6 +26,28 @@
 	let editingIndex = null;
 	let editTitle = '';
 	let editUrl = '';
+	let bookmarkFolders = [];
+
+	// 打开设置面板且为书签模式时，加载书签文件夹列表供选择。
+	$: if (open && $settings.quickAccessMode === 'bookmark') {
+		loadBookmarkFolders();
+	}
+
+	async function loadBookmarkFolders() {
+		bookmarkFolders = await bookmarkDock.listFolders();
+	}
+
+	async function handleBookmarkFolderChange(value) {
+		await settings.save({ bookmarkFolderId: value || null });
+	}
+
+	async function setQaMode(mode) {
+		// 切换到书签模式时若尚未选择文件夹，先加载列表供用户挑选。
+		if (mode === 'bookmark' && !$settings.bookmarkFolderId) {
+			await loadBookmarkFolders();
+		}
+		await settings.save({ quickAccessMode: mode });
+	}
 
 	function close() {
 		open = false;
@@ -41,10 +63,10 @@
 
 	/* ---------- 背景 ---------- */
 	function setBgType(type) {
-		// 默认图片模式需带上内置图片路径
-		if (type === 'preset') {
-			settings.save({ backgroundType: 'preset', backgroundImage: 'images/img1.png' });
-		} else {
+	// 默认图片模式需带上内置图片路径
+	if (type === 'preset') {
+		settings.save({ backgroundType: 'preset', backgroundImage: 'images/kevin-jiner-g-6gKgRC30k-unsplash.jpg' });
+	} else {
 			settings.save({ backgroundType: type });
 		}
 	}
@@ -303,6 +325,42 @@
 				<section class="mb-8">
 					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.qaTitle')}</h3>
 
+					<!-- 快捷访问数据来源：手动或书签文件夹 -->
+					<div class="mb-6">
+						<span class="block text-sm text-white/80 mb-2">{$_('settings.qaMode')}</span>
+						<div class="flex flex-wrap gap-4">
+							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
+								<input type="radio" class="radio radio-primary" name="qamode" value="manual" checked={$settings.quickAccessMode === 'manual'} onchange={() => setQaMode('manual')} />
+								{$_('settings.qaModeManual')}
+							</label>
+							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
+								<input type="radio" class="radio radio-primary" name="qamode" value="bookmark" checked={$settings.quickAccessMode === 'bookmark'} onchange={() => setQaMode('bookmark')} />
+								{$_('settings.qaModeBookmark')}
+							</label>
+						</div>
+					</div>
+
+					{#if $settings.quickAccessMode === 'bookmark'}
+						<!-- 书签模式：选择来源文件夹（仅其直接子书签，不递归子文件夹） -->
+						<div class="mb-6">
+							<span class="block text-sm text-white/80 mb-2">{$_('settings.qaBookmarkFolder')}</span>
+							<select
+								class="select select-sm select-bordered bg-black text-white"
+								value={$settings.bookmarkFolderId ?? ''}
+								onchange={(e) => handleBookmarkFolderChange(e.currentTarget.value)}
+							>
+								<option value="">{$_('settings.qaBookmarkFolderPlaceholder')}</option>
+								{#each bookmarkFolders as bf (bf.id)}
+									<option value={bf.id}>{bf.path}</option>
+								{/each}
+							</select>
+							{#if isExtension()}
+								<p class="mt-1 text-xs text-white/60">{$_('settings.qaBookmarkHint')}</p>
+							{:else}
+								<p class="mt-1 text-xs text-white/60">{$_('settings.qaBookmarkNonExt')}</p>
+							{/if}
+						</div>
+					{:else}
 					<div class="mb-6">
 						<span class="block text-sm text-white/80 mb-2">{$_('settings.qaAdd')}</span>
 						<div class="flex gap-2 mb-3">
@@ -375,6 +433,7 @@
 							{/each}
 						</div>
 					</div>
+					{/if}
 				</section>
 
 				<!-- 每日一言 -->
@@ -455,9 +514,13 @@
 				<section>
 					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">{$_('settings.aboutTitle')}</h3>
 					<div class="text-sm text-white/80 space-y-1">
-						<p class="font-semibold text-white">TSTab</p>
-						<p>{$_('settings.aboutDesc')}</p>
-						<p>{$_('settings.aboutRef')} <a href="https://github.com/ltba/Snow" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Snow</a></p>
+					<p class="font-semibold text-white">TSTab</p>
+					<p>{$_('settings.aboutDesc')}</p>
+					<p>
+						{$_('settings.aboutImage')}
+						<a href="https://unsplash.com/photos/a-snow-covered-mountain-with-a-clear-blue-sky-g-6gKgRC30k" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Kévin JINER</a>
+					</p>
+					<p>{$_('settings.aboutRef')} <a href="https://github.com/ltba/Snow" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Snow</a></p>
 					</div>
 				</section>
 			</div>

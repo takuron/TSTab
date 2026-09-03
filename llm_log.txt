@@ -13,3 +13,5 @@
 [2026-09-03T18:59:20+08:00] 接入 svelte-i18n 实现多语言（zh-CN/en-US）；设置面板新增语言选项（跟随浏览器/固定语言），切换即时生效；同步更新 architecture/llm_readme/Changelog 文档及 i18n 规范。
 [2026-09-03T19:02:52+08:00] 设置面板：语言与搜索引擎合并为首个『搜索与语言』项；语言改为下拉框并以本地化原生名称（简体中文/English）显示，取代语言代号。
 [2026-09-03T19:04:44+08:00] 修正设置面板下拉框为完全不透明背景（bg-black），避免文字与背景混淆。
+[2026-09-03T19:14:15+08:00] 快捷访问新增书签文件夹模式：新增 quickAccessMode/bookmarkFolderId 设置、bookmarkDock store（读取 chrome.bookmarks 指定文件夹的直接子书签，不递归子文件夹）、设置面板模式切换与文件夹下拉、manifest 增加 bookmarks 权限及双语文案。
+[2026-09-03T19:47:45+08:00] 默认背景图由 images/img1.png 改为 images/kevin-jiner-g-6gKgRC30k-unsplash.jpg（作者 Kévin JINER，来源 Unsplash），并更新 README 与设置面板「关于」中对这张图的出处说明与链接。

@@ -8,6 +8,8 @@ export const STORAGE_KEYS = {
 	COPY_PROTECTION: 'copyProtection',
 	QUICK_ACCESS: 'quickAccess',
 	QUICK_ACCESS_POSITION: 'quickAccessPosition',
+	QUICK_ACCESS_MODE: 'quickAccessMode',
+	BOOKMARK_FOLDER_ID: 'bookmarkFolderId',
 	LOCALE: 'locale'
 } as const;
 
@@ -21,12 +23,14 @@ export const HITOKOTO_API = 'https://v1.hitokoto.cn/';
 
 export const DEFAULT_CONFIG = {
 	backgroundType: 'preset',
-	backgroundImage: 'images/img1.png',
+	backgroundImage: 'images/kevin-jiner-g-6gKgRC30k-unsplash.jpg',
 	searchEngine: 'baidu',
 	quoteEnabled: true,
 	quoteTypes: ['a', 'b', 'c', 'd', 'i'],
 	copyProtection: true,
 	quickAccessPosition: 'bottom',
+	quickAccessMode: 'manual',
+	bookmarkFolderId: null,
 	locale: 'browser'
 } as const;
 
@@ -37,4 +41,6 @@ export const IMAGE_HOSTS = ['unsplash', 'pexels', 'pixabay', 'imgur'];
 
 export type BackgroundType = 'gradient' | 'preset' | 'local' | 'url';
 export type QuickAccessPosition = 'top' | 'bottom';
+/** 快捷访问数据来源：手动添加（manual）或读取书签文件夹（bookmark） */
+export type QuickAccessMode = 'manual' | 'bookmark';
 export type QuoteTypes = string[];

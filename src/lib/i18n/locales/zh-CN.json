@@ -71,6 +71,13 @@
 		"qaEditNamePlaceholder": "网站名称",
 		"qaEditUrlPlaceholder": "网站地址",
 		"qaDragAria": "拖拽排序",
+		"qaMode": "快捷访问模式",
+		"qaModeManual": "手动添加",
+		"qaModeBookmark": "书签文件夹",
+		"qaBookmarkFolder": "选择书签文件夹",
+		"qaBookmarkFolderPlaceholder": "请选择文件夹",
+		"qaBookmarkHint": "仅显示该文件夹下的直接书签链接，不包含子文件夹。修改书签后需重新打开新标签页查看变化。",
+		"qaBookmarkNonExt": "书签功能仅在浏览器扩展环境下可用，请加载扩展后再试。",
 		"quoteTitle": "每日一言",
 		"quoteShow": "显示每日一言",
 		"quoteTypesLabel": "一言类型",
@@ -85,6 +92,7 @@
 		"dataHint": "导出配置将保存所有设置到 JSON 文件，导入配置可恢复之前的设置",
 		"aboutTitle": "关于",
 		"aboutDesc": "基于 SvelteKit + Tailwind CSS v4 + DaisyUI 5 重写的简洁新标签页",
+		"aboutImage": "默认背景图：",
 		"aboutRef": "功能参考"
 	},
 	"msg": {

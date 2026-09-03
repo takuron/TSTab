@@ -6,10 +6,11 @@ import {
 	HITOKOTO_API,
 	STORAGE_KEYS,
 	type BackgroundType,
+	type QuickAccessMode,
 	type QuickAccessPosition
 } from './config';
-import { StorageManager } from './storage';
-import type { Hitokoto, QuickAccessItem, QuoteCache } from './types';
+import { isExtension, StorageManager } from './storage';
+import type { BookmarkFolderOption, Hitokoto, QuickAccessItem, QuoteCache } from './types';
 
 /** 快捷访问位置应用 */
 export function applyPosition(el: HTMLElement | null, position: QuickAccessPosition): void {
@@ -34,6 +35,8 @@ interface SettingsState {
 	quoteTypes: string[];
 	copyProtection: boolean;
 	quickAccessPosition: QuickAccessPosition;
+	quickAccessMode: QuickAccessMode;
+	bookmarkFolderId: string | null;
 	locale: string;
 	ready: boolean;
 }
@@ -46,6 +49,8 @@ const defaults: SettingsState = {
 	quoteTypes: [...DEFAULT_CONFIG.quoteTypes],
 	copyProtection: DEFAULT_CONFIG.copyProtection,
 	quickAccessPosition: DEFAULT_CONFIG.quickAccessPosition as QuickAccessPosition,
+	quickAccessMode: DEFAULT_CONFIG.quickAccessMode as QuickAccessMode,
+	bookmarkFolderId: DEFAULT_CONFIG.bookmarkFolderId as string | null,
 	locale: DEFAULT_CONFIG.locale,
 	ready: false
 };
@@ -69,6 +74,14 @@ function createSettingsStore() {
 					items[STORAGE_KEYS.QUICK_ACCESS_POSITION],
 					defaults.quickAccessPosition
 				) as QuickAccessPosition,
+				quickAccessMode: useFallback(
+					items[STORAGE_KEYS.QUICK_ACCESS_MODE],
+					defaults.quickAccessMode
+				) as QuickAccessMode,
+				bookmarkFolderId: useFallback(
+					items[STORAGE_KEYS.BOOKMARK_FOLDER_ID],
+					defaults.bookmarkFolderId
+				) as string | null,
 				locale: useFallback(items[STORAGE_KEYS.LOCALE], defaults.locale) as string,
 				ready: true
 			});
@@ -85,6 +98,8 @@ function createSettingsStore() {
 				[STORAGE_KEYS.QUOTE_TYPES]: next.quoteTypes,
 				[STORAGE_KEYS.COPY_PROTECTION]: next.copyProtection,
 				[STORAGE_KEYS.QUICK_ACCESS_POSITION]: next.quickAccessPosition,
+				[STORAGE_KEYS.QUICK_ACCESS_MODE]: next.quickAccessMode,
+				[STORAGE_KEYS.BOOKMARK_FOLDER_ID]: next.bookmarkFolderId,
 				[STORAGE_KEYS.LOCALE]: next.locale
 			});
 		}
@@ -165,6 +180,91 @@ export function faviconUrl(url: string): string {
 		return '';
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 书签 Dock（从书签文件夹读取链接，不递归子文件夹）                      */
+/* ------------------------------------------------------------------ */
+
+interface BookmarkDockState {
+	items: QuickAccessItem[];
+	folderName: string;
+}
+
+function createBookmarkDockStore() {
+	const { subscribe, set } = writable<BookmarkDockState>({ items: [], folderName: '' });
+
+	// 1. 仅扩展环境下可读取书签；非扩展环境或权限缺失时返回空数组，避免报错。
+	function getBookmarksTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> {
+		if (!isExtension() || typeof chrome.bookmarks === 'undefined') {
+			return Promise.resolve([]);
+		}
+		return new Promise((resolve) => chrome.bookmarks.getTree((tree) => resolve(tree)));
+	}
+
+	// 2. 按 id 在树中深度查找节点。
+	function findNode(
+		nodes: chrome.bookmarks.BookmarkTreeNode[],
+		id: string | null
+	): chrome.bookmarks.BookmarkTreeNode | undefined {
+		if (!id) return undefined;
+		for (const node of nodes) {
+			if (node.id === id) return node;
+			if (node.children) {
+				const found = findNode(node.children, id);
+				if (found) return found;
+			}
+		}
+		return undefined;
+	}
+
+	// 3. 仅取目标文件夹的直接子节点（存在 url 即视为书签），不递归遍历子文件夹。
+	async function load(folderId: string | null): Promise<void> {
+		if (!folderId) {
+			set({ items: [], folderName: '' });
+			return;
+		}
+		const tree = await getBookmarksTree();
+		const folder = findNode(tree, folderId);
+		if (!folder) {
+			set({ items: [], folderName: '' });
+			return;
+		}
+		const items: QuickAccessItem[] = (folder.children ?? [])
+			.filter((c): c is chrome.bookmarks.BookmarkTreeNode & { url: string } => Boolean(c.url))
+			.map((c) => ({
+				title: c.title || c.url,
+				url: c.url,
+				icon: faviconUrl(c.url),
+				addedAt: c.dateAdded ?? 0
+			}));
+		set({ items, folderName: folder.title || '' });
+	}
+
+	// 4. 遍历树汇总所有文件夹节点（含层级路径），供设置面板下拉选择。
+	function flattenFolders(
+		nodes: chrome.bookmarks.BookmarkTreeNode[],
+		path: string
+	): BookmarkFolderOption[] {
+		const result: BookmarkFolderOption[] = [];
+		for (const node of nodes) {
+			// 无 children 的节点是书签而非文件夹，跳过。
+			if (!node.children) continue;
+			const nodePath = path ? `${path} / ${node.title || node.id}` : node.title || node.id;
+			result.push({ id: node.id, title: node.title || node.id, path: nodePath });
+			result.push(...flattenFolders(node.children, nodePath));
+		}
+		return result;
+	}
+
+	async function listFolders(): Promise<BookmarkFolderOption[]> {
+		const tree = await getBookmarksTree();
+		return flattenFolders(tree, '');
+	}
+
+	return { subscribe, load, listFolders };
+}
+
+export const bookmarkDock = createBookmarkDockStore();
 
 /* ------------------------------------------------------------------ */
 /* 一言                                                                */

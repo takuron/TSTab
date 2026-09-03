@@ -77,7 +77,7 @@ scripts/
 `storage.ts` 的 `isExtension()` 检测 `chrome.storage` 是否存在，决定 `StorageManager` 走 `chrome.storage.local` 还是 `localStorage` 降级实现（接口签名对齐 chrome.storage，全部返回 Promise）。
 
 - `vite dev` 网页预览：数据存 `localStorage`；popup 页会显示「非扩展环境」提示，用当前地址模拟标签页。
-- 扩展环境：数据存 `chrome.storage.local`，manifest 声明的权限为 `storage` / `tabs` / `activeTab`。
+- 扩展环境：数据存 `chrome.storage.local`，manifest 声明的权限为 `storage` / `tabs` / `activeTab` / `bookmarks`。
 
 **规则：** 所有需要区分环境的代码必须通过 `isExtension()` 判断，不得散落 `typeof chrome` 检查。
 
@@ -95,13 +95,14 @@ scripts/
 | --- | --- | --- |
 | `settings` | `load()` / `save(partial)` | `load` 会先 `initDefaults` 再全量读取；`save` 乐观更新内存后整批写存储 |
 | `quickAccess` | `load()` / `add(item)` / `remove(i)` / `updateItem(i, patch)` / `reorder(from, to)` | 以 `url` 去重；所有变更即写存储 |
+| `bookmarkDock` | `load(folderId)` / `listFolders()` | 从 `chrome.bookmarks` 读取指定文件夹的直接子书签组成 Dock（不递归子文件夹）；`listFolders` 返回全部文件夹及其层级路径供选择；非扩展环境返回空 |
 | `quote` | `load()` / `refresh()` / `clearCache()` | `load` 走 `CACHE_EXPIRY`（1 小时）缓存；失败展示罗曼·罗兰兜底文案 |
 
 派生 store：`backgroundStyle`（由 settings 派生背景 CSS `url(...)`，渐变模式为空串）。
 
 ### 5.3 数据类型
 
-见 `types.ts`：`QuickAccessItem { title, url, icon, addedAt }`、`Hitokoto`（一言 API 响应）、`QuoteCache { data, timestamp }`、`Settings`。
+见 `types.ts`：`QuickAccessItem { title, url, icon, addedAt }`、`Hitokoto`（一言 API 响应）、`QuoteCache { data, timestamp }`、`BookmarkFolderOption { id, title, path }`、`Settings`。快捷访问数据来源由设置项 `quickAccessMode`（`manual` / `bookmark`）决定：`manual` 读 `quickAccess` store，`bookmark` 读 `bookmarkDock` store；后者通过 `bookmarkFolderId` 指定来源文件夹（默认为空，需在设置面板选择）。
 
 ### 5.4 配置导入/导出
 

@@ -144,6 +144,8 @@ export const StorageManager = {
 		quoteTypes: STORAGE_KEYS.QUOTE_TYPES,
 		copyProtection: STORAGE_KEYS.COPY_PROTECTION,
 		quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION,
+		quickAccessMode: STORAGE_KEYS.QUICK_ACCESS_MODE,
+		bookmarkFolderId: STORAGE_KEYS.BOOKMARK_FOLDER_ID,
 		locale: STORAGE_KEYS.LOCALE
 	};
 		const updates: Record<string, unknown> = {};

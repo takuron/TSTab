@@ -73,7 +73,7 @@ npm run build
 3. 点击「加载已解压的扩展程序」，选择 `build/` 目录
 4. 打开新标签页即可看到新界面；点击工具栏扩展图标可使用「添加到快捷访问」弹窗
 
-> 内置背景图 `images/img1.png` 与图标取自 Snow 项目，遵循原项目 GPL v3 许可（见仓库根目录 `LICENSE`）。
+> 默认背景图 `images/kevin-jiner-g-6gKgRC30k-unsplash.jpg` 来自 [Kévin JINER](https://unsplash.com/photos/a-snow-covered-mountain-with-a-clear-blue-sky-g-6gKgRC30k)（[Unsplash](https://unsplash.com/)）。其余图标取自 Snow 项目，遵循原项目 GPL v3 许可（见仓库根目录 `LICENSE`）。
 
 ### 说明：MV3 与 CSP
 
