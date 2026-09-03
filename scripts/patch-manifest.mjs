@@ -41,12 +41,22 @@ function externalizeInlineScripts(file) {
 	writeFileSync(file, out, 'utf8');
 }
 
+/** 移除 <link rel="modulepreload">：MV3 扩展页中这些预加载标签会在与脚本实际
+ *  加载不同的隔离世界执行，导致 "cross-world extension resource mismatch" 报错；
+ *  脚本已由 <script src> 加载，预加载链接冗余，直接去除即可。 */
+function stripModulePreloads(file) {
+	const html = readFileSync(file, 'utf8');
+	const out = html.replace(/<link\b[^>]*\brel="modulepreload"[^>]*>/g, '');
+	writeFileSync(file, out, 'utf8');
+}
+
 const htmlFiles = readdirSync(buildDir)
 	.filter((f) => f.endsWith('.html'))
 	.map((f) => resolve(buildDir, f));
 
 for (const file of htmlFiles) {
 	externalizeInlineScripts(file);
+	stripModulePreloads(file);
 }
 
 // MV3 扩展页 CSP：仅允许自身源。所有脚本已外部化到 '/app/**'，无内联脚本。
