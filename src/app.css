@@ -31,6 +31,11 @@ body {
 	margin: 0;
 }
 
+/* 深色兜底色放在 html 上：body 保持透明，避免其自身不透明背景盖住 fixed -z-10 的背景图层 */
+html {
+	background-color: var(--bg-primary);
+}
+
 body {
 	font-family:
 		'HarmonyOS_Regular',
@@ -41,7 +46,7 @@ body {
 		'Helvetica Neue',
 		Arial,
 		sans-serif;
-	background-color: var(--bg-primary);
+	background-color: transparent;
 	color: var(--text-primary);
 	-webkit-font-smoothing: antialiased;
 }
