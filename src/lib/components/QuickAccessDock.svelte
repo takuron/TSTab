@@ -1,14 +1,11 @@
 <script>
-	import { quickAccess, settings } from '$lib/stores';
+	import { quickAccess } from '$lib/stores';
 </script>
 
 {#if $quickAccess.length > 0}
 	<nav
 		aria-label="快捷访问"
-		class="fixed left-1/2 -translate-x-1/2 z-40 flex items-end gap-3 px-5 py-3 glass rounded-[25px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)]
-		{$settings.quickAccessPosition === 'top'
-			? 'top-5 animate-[slide-down_0.4s_ease-out]'
-			: 'bottom-5 animate-[slide-up_0.4s_ease-out]'}"
+		class="fixed left-1/2 -translate-x-1/2 z-40 flex items-end gap-3 px-5 py-3 glass rounded-[25px] border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.3)] bottom-5 animate-[slide-up_0.4s_ease-out]"
 	>
 		{#each $quickAccess as item (item.url)}
 			<a

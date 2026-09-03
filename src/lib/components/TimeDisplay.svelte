@@ -21,8 +21,8 @@
 	onDestroy(() => clearInterval(timer));
 </script>
 
-<div class="text-center mb-10 animate-[fade_0.5s_ease-in-out]">
-	<div class="font-extralight text-[64px] lg:text-[96px] leading-none tracking-tight mb-2 text-white drop-shadow-lg">
+<div class="text-center mb-14 animate-[fade_0.5s_ease-in-out]">
+	<div class="font-medium text-[64px] lg:text-[96px] leading-none tracking-tight mb-2 text-white drop-shadow-lg">
 		{time}
 	</div>
 	<div class="font-light text-lg lg:text-2xl text-white/90 drop-shadow">

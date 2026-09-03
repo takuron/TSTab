@@ -284,18 +284,6 @@
 					<h3 class="text-lg font-semibold text-white mb-4 pb-3 border-b border-white/10">快捷访问</h3>
 
 					<div class="mb-6">
-						<span class="block text-sm text-white/80 mb-2">显示位置</span>
-						<div class="flex gap-4">
-							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="qapos" value="bottom" checked={$settings.quickAccessPosition === 'bottom'} onchange={() => settings.save({ quickAccessPosition: 'bottom' })} /> 底部
-							</label>
-							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="qapos" value="top" checked={$settings.quickAccessPosition === 'top'} onchange={() => settings.save({ quickAccessPosition: 'top' })} /> 顶部
-							</label>
-						</div>
-					</div>
-
-					<div class="mb-6">
 						<span class="block text-sm text-white/80 mb-2">添加网站</span>
 						<div class="flex gap-2 mb-3">
 							<input type="text" bind:value={qaTitle} placeholder="网站名称（如：GitHub）" class="input input-sm flex-1 bg-white/10 text-white placeholder:text-white/50" />

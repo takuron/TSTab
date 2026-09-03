@@ -22,7 +22,7 @@
 
 <form
 	onsubmit={onSearch}
-	class="search-section w-full max-w-[600px] mb-14 animate-[slide-in_0.3s_ease-out]"
+	class="search-section relative z-50 w-full max-w-[600px] mb-14 animate-[slide-in_0.3s_ease-out]"
 >
 	<div
 		class="flex items-center gap-2 glass rounded-full p-2 border border-white/20 transition-all duration-300 focus-within:border-white/40 focus-within:bg-black/40 focus-within:shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
@@ -51,7 +51,7 @@
 			</button>
 			<ul
 				tabindex="0"
-				class="dropdown-content z-30 mt-2 menu w-32 glass-strong rounded-lg border border-white/10 p-1 shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+				class="dropdown-content z-[999] mt-2 menu w-32 bg-black/75 backdrop-blur-lg rounded-lg border border-white/15 p-1 shadow-[0_4px_16px_rgba(0,0,0,0.3)]"
 			>
 				{#each Object.entries(SEARCH_ENGINES) as [value, def] (value)}
 					<li>

@@ -1,6 +1,5 @@
 <script>
 	import { onMount } from 'svelte';
-	import Cursor from '$lib/components/Cursor.svelte';
 	import QuickAccessDock from '$lib/components/QuickAccessDock.svelte';
 	import QuoteCard from '$lib/components/QuoteCard.svelte';
 	import SearchBar from '$lib/components/SearchBar.svelte';
@@ -40,14 +39,17 @@
 	style="background-image: {$backgroundStyle || 'linear-gradient(135deg, rgba(91,134,229,0.6) 0%, rgba(54,209,220,0.6) 100%)'}"
 ></div>
 
-<!-- 主内容 -->
-<main class="relative flex min-h-screen flex-col items-center justify-center px-5 py-10 text-white">
+<!-- 主内容：时间+搜索固定在顶部，一言区域预留固定高度保证布局不跳动、与 dock 之间始终保留空隙 -->
+<main class="relative flex min-h-screen flex-col items-center px-5 pt-[16vh] text-white">
 	<TimeDisplay />
 	<SearchBar />
 
-	{#if $settings.quoteEnabled}
-		<QuoteCard />
-	{/if}
+	<!-- 每日一言：预留固定高度，避免显示/隐藏时上下布局移动 -->
+	<div class="w-full max-w-[800px] min-h-[130px]">
+		{#if $settings.quoteEnabled}
+			<QuoteCard />
+		{/if}
+	</div>
 </main>
 
 <!-- 快捷访问 Dock -->
@@ -85,5 +87,4 @@
 <SettingsModal bind:open={openSettings} />
 
 <!-- 组件效果 -->
-<Cursor />
 <Security />
