@@ -5,3 +5,5 @@
 [2026-09-03T13:35:21+08:00] 调整：略微缩小时间与搜索框间距；修复搜索引擎下拉框过于透明问题，改为深色不透明背景。
 [2026-09-03T13:38:30+08:00] 修复：提升搜索引擎下拉栏层级，避免被一言遮挡；重构禁止复制逻辑，改为事件触发时读取最新设置并新增 selectstart/dragstart 拦截，确保生效。
 [2026-09-03T13:39:18+08:00] 微调：时间与搜索框整体下移，pt 由 14vh 调整为 16vh。
+[2026-09-03T13:45:35+08:00] 修复扩展加载报错：Chrome MV3 扩展页 CSP 禁止 script-src 使用 sha256 哈希。改为构建后外部化内联脚本（写入 _app/bootstrap/*.js 并以 src 引用），CSP 统一为 script-src 'self'。
+[2026-09-03T14:11:02+08:00] 修复扩展无法加载 CSS/JS：Chrome 扩展禁止 '_' 开头目录名（系统保留），导致默认产物目录 _app/ 被拒绝。改为 svelte.config.js 设置 kit.appDir='app'，同步更新 patch-manifest.mjs 的 bootstrap 输出路径，产物引用全部改为 /app/**；已同步 docs/architecture.md 与 docs/build_setup.md 第 6 节构建链说明。

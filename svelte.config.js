@@ -6,6 +6,8 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
+		// Chrome 扩展禁止 '_' 开头的文件/目录名（系统保留），故产物目录不能用默认的 "_app"
+		appDir: 'app',
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',

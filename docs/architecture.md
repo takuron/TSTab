@@ -104,12 +104,13 @@ scripts/
 
 ## 6 MV3 与 CSP（构建链关键点）
 
-SvelteKit 预渲染页面内含客户端挂载所需的内联 `<script>`，而 MV3 禁止 `unsafe-inline`。因此：
+SvelteKit 预渲染页面内含客户端挂载所需的内联 `<script>`，而 MV3 禁止 `unsafe-inline`；同时 Chrome 扩展**禁止 `_` 开头的文件/目录名**（系统保留），故产物目录不能用 SvelteKit 默认的 `_app`。因此：
 
 1. `static/manifest.json` 是清单的**唯一事实来源**（不含 CSP 字段）。
-2. `pnpm run build` = `vite build` + `node scripts/patch-manifest.mjs`。
-3. `patch-manifest.mjs` 扫描 `build/` 下所有 `.html` 的内联脚本正文，计算 SHA-256 哈希，写入 `build/manifest.json` 的 `content_security_policy.extension_pages`（`script-src 'self' 'sha256-…'`）。
-4. **任何构建产物问题优先排查此链路**；新增页面路由时需确认 `svelte.config.js` 的 `prerender.entries` 已包含（当前为 `/newtab` 与 `/popup`）。
+2. `svelte.config.js` 设置 `kit.appDir = 'app'`：客户端 JS/CSS 产物输出到 `build/app/`，HTML 引用 `/app/**` 绝对路径（配合 `paths.relative = false`）。
+3. `pnpm run build` = `vite build` + `node scripts/patch-manifest.mjs`。
+4. `patch-manifest.mjs` 将 `build/` 下所有 `.html` 的内联脚本外部化为 `build/app/bootstrap/*.js`（以 `src` 引用），并在 `build/manifest.json` 写入 `content_security_policy.extension_pages`（`script-src 'self'`）。脚本中的 `APP_DIR` 常量必须与 `kit.appDir` 保持一致。
+5. **任何构建产物问题优先排查此链路**；新增页面路由时需确认 `svelte.config.js` 的 `prerender.entries` 已包含（当前为 `/newtab` 与 `/popup`）。
 
 ## 7 外部依赖与网络
 

@@ -35,7 +35,7 @@ pnpm run build
 
 产物输出到 `build/` 目录，包含 `manifest.json`、`newtab.html`、`popup.html` 及静态资源。
 
-**必须通过此命令构建**：它会自动执行 `scripts/patch-manifest.mjs`，为 SvelteKit 预渲染页面的内联脚本计算 SHA-256 哈希并写入 MV3 CSP（详见 `docs/architecture.md` 第 6 节）。禁止手改 `build/` 目录下的文件。
+**必须通过此命令构建**：它会自动执行 `scripts/patch-manifest.mjs`，将 SvelteKit 预渲染页面的内联脚本外部化到 `app/bootstrap/` 并写入 MV3 CSP（详见 `docs/architecture.md` 第 6 节）。注意：Chrome 扩展禁止 `_` 开头的文件/目录名，因此产物目录为 `app/`（由 `svelte.config.js` 的 `kit.appDir` 控制），禁止手改 `build/` 目录下的文件。
 
 ## 5 加载到浏览器（开发者模式）
 
