@@ -8,6 +8,11 @@
 
 ### Added
 
+- 修复预置图标域名匹配不准确的问题：映射改为带完整 TLD 的域名，并按「全域名或任意子域」通配匹配（如 chat.deepseek.com、app.ubuntu.com、gemini.google.com 均能正确命中），更具体子域优先；域名按类型注释分组排序
+- 快捷访问预置图标：内置常见站点（Google/百度/Bing/GitHub/哔哩哔哩/YouTube 等）的 dashboard-icons 图标，命中域名时默认替换 Dock 图标（本地 SVG，无网络请求）
+- 预置图标扩充：新增 AI 助手（OpenAI/ChatGPT/Gemini/Grok/DeepSeek/Z.ai/Claude/Perplexity/通义千问/Kimi 等）、设计（Figma/Behance/Excalidraw/Framer）、云服务商（Vercel/DigitalOcean/Azure/Netlify/Railway 等）、动漫（Pixiv/Crunchyroll/MangaDex）、音乐（Apple Music/YouTube Music/Deezer）与多邻国等 30+ 站点
+- 预置图标扩充：新增 Google 在线服务（Gmail/翻译/云端硬盘/文档/表格/日历/地图/相册/Talk）、邮件服务（Proton/Tuta/Fastmail/iCloud/Zoho）、流媒体（Disney+）、在线服务（Bitwarden/DeepL/Dropbox/Box/OneDrive/Mastodon/Signal）、游戏平台（Epic/PlayStation/Xbox）以及大量 Linux 发行版官网（Ubuntu/Debian/Arch/Fedora/Alpine/Mint/Manjaro 等）；本地自托管软件（Docker/K8s/Nextcloud/Syncthing 等）不内置，走站点 favicon
+- 设置面板快捷访问区新增「使用预置图标」开关（默认开启），关闭后 Dock 回退使用站点 favicon
 - 快捷访问新增「主菜单模式」：可支持从「书签文件夹」读取链接展示为 Dock，且仅显示该文件夹的直接书签（不递归子文件夹）
 - 设置面板快捷访问区新增数据来源切换（手动添加 / 书签文件夹）与书签文件夹下拉选择
 - manifest 新增 `bookmarks` 权限，用于读取用户书签

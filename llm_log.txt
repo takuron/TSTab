@@ -16,3 +16,8 @@
 [2026-09-03T19:14:15+08:00] 快捷访问新增书签文件夹模式：新增 quickAccessMode/bookmarkFolderId 设置、bookmarkDock store（读取 chrome.bookmarks 指定文件夹的直接子书签，不递归子文件夹）、设置面板模式切换与文件夹下拉、manifest 增加 bookmarks 权限及双语文案。
 [2026-09-03T19:47:45+08:00] 默认背景图由 images/img1.png 改为 images/kevin-jiner-g-6gKgRC30k-unsplash.jpg（作者 Kévin JINER，来源 Unsplash），并更新 README 与设置面板「关于」中对这张图的出处说明与链接。
 [2026-09-03T21:46:32+08:00] 修复 MV3 扩展页因 modulepreload 导致 cross-world resource mismatch 报错：在 patch-manifest.mjs 中移除构建产物 HTML 的 rel=modulepreload 链接。
+[2026-09-04T22:04:43+08:00] 新增快捷访问预置图标：自 dashboard-icons 下载 42 个常见站点 SVG，新建 dockIcons.ts 域名映射，命中时于 QuickAccessDock 默认替换 favicon 图标，并同步更新架构文档与 Changelog。
+[2026-09-04T22:11:49+08:00] 扩充快捷访问预置图标：新增 AI（openai/chatgpt/google-gemini/grok/deepseek/z-ai/claude-ai/perplexity/qwen/kimi-ai）、设计（behance/excalidraw/framer）、云（vercel/digital-ocean/azure/netlify/railway/linode/hetzner）、动漫（crunchyroll/manga-dex）、音乐（apple-music/youtube-music/deezer）与 duolingo 等站点，更新 dockIcons.ts 并同步 Changelog。
+[2026-09-04T22:16:11+08:00] 新增 Pixiv 预置图标（自 selfh.st/icons 的 selfhst/icons 库下载）；新增设置项 usePresetIcons（默认开启）控制预置图标替换，接入 stores/config/storage/SettingsModal/i18n，并同步架构文档与 Changelog。
+[2026-09-04T22:24:08+08:00] 按规则调整预置图标：仅内置在线服务与 Linux 发行版官网，删除本地自托管软件（docker/kubernetes/nextcloud/syncthing/jellyfin/emby）图标；新增 Google 服务、邮件、Disney+、Bitwarden/DeepL/云盘、游戏平台及 Linux 发行版图标，更新 dockIcons.ts 与 Changelog。
+[2026-09-04T22:33:39+08:00] 修复预置图标域名匹配 Bug：映射键改为带完整 TLD 的域名并采用全域名+子域通配（endsWith .key），按域名长度降序优先使具体子域命中专用图标（chat.deepseek.com/app.ubuntu.com/gemini.google.com 均修复）；域名按类型注释分组排序；补齐 bitbucket/codeberg 并同步文档与 Changelog。

@@ -37,6 +37,7 @@ interface SettingsState {
 	quickAccessPosition: QuickAccessPosition;
 	quickAccessMode: QuickAccessMode;
 	bookmarkFolderId: string | null;
+	usePresetIcons: boolean;
 	locale: string;
 	ready: boolean;
 }
@@ -51,6 +52,7 @@ const defaults: SettingsState = {
 	quickAccessPosition: DEFAULT_CONFIG.quickAccessPosition as QuickAccessPosition,
 	quickAccessMode: DEFAULT_CONFIG.quickAccessMode as QuickAccessMode,
 	bookmarkFolderId: DEFAULT_CONFIG.bookmarkFolderId as string | null,
+	usePresetIcons: DEFAULT_CONFIG.usePresetIcons,
 	locale: DEFAULT_CONFIG.locale,
 	ready: false
 };
@@ -82,6 +84,10 @@ function createSettingsStore() {
 					items[STORAGE_KEYS.BOOKMARK_FOLDER_ID],
 					defaults.bookmarkFolderId
 				) as string | null,
+				usePresetIcons: useFallback(
+					items[STORAGE_KEYS.USE_PRESET_ICONS],
+					defaults.usePresetIcons
+				) as boolean,
 				locale: useFallback(items[STORAGE_KEYS.LOCALE], defaults.locale) as string,
 				ready: true
 			});
@@ -100,6 +106,7 @@ function createSettingsStore() {
 				[STORAGE_KEYS.QUICK_ACCESS_POSITION]: next.quickAccessPosition,
 				[STORAGE_KEYS.QUICK_ACCESS_MODE]: next.quickAccessMode,
 				[STORAGE_KEYS.BOOKMARK_FOLDER_ID]: next.bookmarkFolderId,
+				[STORAGE_KEYS.USE_PRESET_ICONS]: next.usePresetIcons,
 				[STORAGE_KEYS.LOCALE]: next.locale
 			});
 		}

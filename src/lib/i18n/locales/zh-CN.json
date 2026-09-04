@@ -74,6 +74,8 @@
 		"qaMode": "快捷访问模式",
 		"qaModeManual": "手动添加",
 		"qaModeBookmark": "书签文件夹",
+		"qaUsePresetIcons": "使用预置图标",
+		"qaUsePresetIconsHint": "命中常见站点（如 Google、GitHub、B 站等）时，默认替换为内置图标而非站点 favicon。",
 		"qaBookmarkFolder": "选择书签文件夹",
 		"qaBookmarkFolderPlaceholder": "请选择文件夹",
 		"qaBookmarkHint": "仅显示该文件夹下的直接书签链接，不包含子文件夹。修改书签后需重新打开新标签页查看变化。",

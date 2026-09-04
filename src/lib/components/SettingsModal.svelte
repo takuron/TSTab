@@ -340,6 +340,20 @@
 						</div>
 					</div>
 
+					<!-- 预置图标替换开关 -->
+					<div class="mb-6 flex items-center justify-between">
+						<div>
+							<div class="text-sm text-white/80">{$_('settings.qaUsePresetIcons')}</div>
+							<p class="mt-1 text-xs text-white/60">{$_('settings.qaUsePresetIconsHint')}</p>
+						</div>
+						<input
+							type="checkbox"
+							class="toggle toggle-primary"
+							checked={$settings.usePresetIcons}
+							onchange={(e) => settings.save({ usePresetIcons: e.currentTarget.checked })}
+						/>
+					</div>
+
 					{#if $settings.quickAccessMode === 'bookmark'}
 						<!-- 书签模式：选择来源文件夹（仅其直接子书签，不递归子文件夹） -->
 						<div class="mb-6">

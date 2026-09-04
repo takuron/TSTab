@@ -74,6 +74,8 @@
 		"qaMode": "Quick access mode",
 		"qaModeManual": "Manual",
 		"qaModeBookmark": "Bookmark folder",
+		"qaUsePresetIcons": "Use preset icons",
+		"qaUsePresetIconsHint": "When a common site (e.g. Google, GitHub, Bilibili) is detected, use the built-in icon instead of the site favicon.",
 		"qaBookmarkFolder": "Choose a bookmark folder",
 		"qaBookmarkFolderPlaceholder": "Select a folder",
 		"qaBookmarkHint": "Shows only the direct bookmark links in this folder, not subfolders. Reopen a new tab to see changes after editing bookmarks.",

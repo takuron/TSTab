@@ -1,12 +1,17 @@
 <script>
 	import { _ } from 'svelte-i18n';
+	import { presetIconFor } from '$lib/dockIcons';
 	import { bookmarkDock, quickAccess, settings } from '$lib/stores';
 
 	// 记录每个快捷访问图标是否加载失败，失败的用占位球兜底
 	let iconFailed = {};
 
 	// 根据快捷访问模式选择数据来源：bookmark 模式读书签文件夹，否则读手动添加列表。
-	$: items = $settings.quickAccessMode === 'bookmark' ? $bookmarkDock.items : $quickAccess;
+	// 命中预置域名表且设置开启时则默认替换为本地 dashboard-icons，否则用站点 favicon。
+	$: items = ($settings.quickAccessMode === 'bookmark' ? $bookmarkDock.items : $quickAccess).map((it) => ({
+		...it,
+		icon: $settings.usePresetIcons ? presetIconFor(it.url) ?? it.icon : it.icon
+	}));
 </script>
 
 {#if items.length > 0}

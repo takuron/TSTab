@@ -41,12 +41,13 @@ TSTab 是一个浏览器「新标签页」扩展（Chrome MV3），使用 **Svel
 src/
   app.css                 # Tailwind/DaisyUI 入口 + 设计令牌 + glass 工具类 + 关键帧动画 + #snow-cursor 样式
   app.html                # SvelteKit HTML 模板（data-theme=dark；lang 由客户端按 locale 动态写入）
-  lib/
-    config.ts             # STORAGE_KEYS、SEARCH_ENGINES、DEFAULT_CONFIG、CACHE_EXPIRY 等常量与类型别名
-    types.ts              # QuickAccessItem / Hitokoto / QuoteCache / Settings 接口
-    storage.ts            # StorageManager：chrome.storage.local 封装，非扩展环境降级 localStorage
-    stores.ts             # settings / quickAccess / quote 三个 store 及 applyPosition / faviconUrl 工具函数
-    search.ts             # normalizeUrlOrNull / buildSearchUrl
+    lib/
+      config.ts             # STORAGE_KEYS、SEARCH_ENGINES、DEFAULT_CONFIG、CACHE_EXPIRY 等常量与类型别名
+      types.ts              # QuickAccessItem / Hitokoto / QuoteCache / Settings 接口
+      storage.ts            # StorageManager：chrome.storage.local 封装，非扩展环境降级 localStorage
+      stores.ts             # settings / quickAccess / quote 三个 store 及 applyPosition / faviconUrl 工具函数
+      dockIcons.ts          # 快捷访问预置图标：常见域名 -> dashboard-icons 本地 SVG，presetIconFor 命中解析
+      search.ts             # normalizeUrlOrNull / buildSearchUrl
     i18n/
       index.js            # svelte-i18n 初始化：注册语言包、init、与 settings.locale 偏好同步、resolveLocale
       locales/
@@ -121,7 +122,7 @@ SvelteKit 预渲染页面内含客户端挂载所需的内联 `<script>`，而 M
 ## 7 外部依赖与网络
 
 - 唯一外部 API：一言 `https://v1.hitokoto.cn/`（已在 manifest `host_permissions` 声明），类型参数由 `settings.quoteTypes`（`a/b/c/d/i` 等）映射为 `c=` 查询参数。
-- 图标获取：`faviconUrl()` 直接拼接 `{origin}/favicon.ico`；popup 中优先使用 `chrome.tabs` 返回的 `favIconUrl`。
+- 图标获取：`faviconUrl()` 直接拼接 `{origin}/favicon.ico`；popup 中优先使用 `chrome.tabs` 返回的 `favIconUrl`。快捷访问 Dock 展示时，若设置项 `usePresetIcons`（默认开启）为真，先用 `dockIcons.presetIconFor(url)` 检查是否命中预置域名表，命中则用本地 dashboard-icons SVG 替换 favicon（无网络请求），未命中才回退站点 favicon。`dockIcons.ts` 的映射键为带完整 TLD 的域名（如 `deepseek.com`），匹配规则为「全域名或任意子域」通配（`host === key || host.endsWith('.' + key)`），并按键长度降序优先，使更具体子域（如 `gemini.google.com`）命中专用图标；仅内置在线服务与 Linux 发行版官网，本地自托管软件（浏览器、Docker 等）不内置。
 - 无任何第三方运行时依赖（package.json 中全部为 devDependencies）。
 
 ## 8 样式体系

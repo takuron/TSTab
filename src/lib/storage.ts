@@ -146,6 +146,7 @@ export const StorageManager = {
 		quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION,
 		quickAccessMode: STORAGE_KEYS.QUICK_ACCESS_MODE,
 		bookmarkFolderId: STORAGE_KEYS.BOOKMARK_FOLDER_ID,
+		usePresetIcons: STORAGE_KEYS.USE_PRESET_ICONS,
 		locale: STORAGE_KEYS.LOCALE
 	};
 		const updates: Record<string, unknown> = {};

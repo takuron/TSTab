@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
 	QUICK_ACCESS_POSITION: 'quickAccessPosition',
 	QUICK_ACCESS_MODE: 'quickAccessMode',
 	BOOKMARK_FOLDER_ID: 'bookmarkFolderId',
+	USE_PRESET_ICONS: 'usePresetIcons',
 	LOCALE: 'locale'
 } as const;
 
@@ -31,6 +32,7 @@ export const DEFAULT_CONFIG = {
 	quickAccessPosition: 'bottom',
 	quickAccessMode: 'manual',
 	bookmarkFolderId: null,
+	usePresetIcons: true,
 	locale: 'browser'
 } as const;
 
