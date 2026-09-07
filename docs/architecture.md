@@ -87,23 +87,23 @@ scripts/
 ### 5.1 存储键与默认值
 
 - 键名统一定义在 `config.ts` 的 `STORAGE_KEYS`（如 `backgroundType`、`quickAccess`、`quoteCache` 等），**禁止**在别处硬编码字符串键。
-- 默认值统一定义在 `config.ts` 的 `DEFAULT_CONFIG`；`StorageManager.initDefaults()` 在 `settings.load()` 时仅补写缺失键。
+- 默认值统一定义在 `config.ts` 的 `DEFAULT_CONFIG`；`StorageManager.initDefaults()` 在 `settings.load()` 时仅补写缺失键。`initDefaults(existing?)` 支持传入调用方已读取的数据以复用，并在补写后返回完整数据，避免启动时对 `chrome.storage` 重复全量读取造成卡顿。
 - 新增设置项时需同步修改：`DEFAULT_CONFIG`、`STORAGE_KEYS`、`SettingsState`（stores.ts）、`settings` store 的 `load()`/`save()` 映射、以及 `SettingsModal` 的 UI（若为语言类配置见第 9 节）。
 
 ### 5.2 store 契约
 
 | store | 方法 | 说明 |
 | --- | --- | --- |
-| `settings` | `load()` / `save(partial)` | `load` 会先 `initDefaults` 再全量读取；`save` 乐观更新内存后整批写存储 |
+| `settings` | `load()` / `save(partial)` | `load` 通过 `initDefaults` 单次全量读取并补写缺失默认值（不重复读取）；`save` 乐观更新内存后整批写存储 |
 | `quickAccess` | `load()` / `add(item)` / `remove(i)` / `updateItem(i, patch)` / `reorder(from, to)` | 以 `url` 去重；所有变更即写存储 |
 | `bookmarkDock` | `load(folderId)` / `listFolders()` | 从 `chrome.bookmarks` 读取指定文件夹的直接子书签组成 Dock（不递归子文件夹）；`listFolders` 返回全部文件夹及其层级路径供选择；非扩展环境返回空 |
-| `quote` | `load()` / `refresh()` / `clearCache()` | `load` 走 `CACHE_EXPIRY`（1 小时）缓存；失败展示罗曼·罗兰兜底文案 |
+| `quote` | `load()` / `refresh()` / `clearCache()` | 双缓存位 + 使用位标记：界面切换仅改 `active`（到期轮换 / 手动刷新都只切换使用位），网络只填空闲槽且不更新界面；详见 `docs/quote_api.md` |
 
 派生 store：`backgroundStyle`（由 settings 派生背景 CSS `url(...)`，渐变模式为空串）。
 
 ### 5.3 数据类型
 
-见 `types.ts`：`QuickAccessItem { title, url, icon, addedAt }`、`Hitokoto`（一言 API 响应）、`QuoteCache { data, timestamp }`、`BookmarkFolderOption { id, title, path }`、`Settings`。快捷访问数据来源由设置项 `quickAccessMode`（`manual` / `bookmark`）决定：`manual` 读 `quickAccess` store，`bookmark` 读 `bookmarkDock` store；后者通过 `bookmarkFolderId` 指定来源文件夹（默认为空，需在设置面板选择）。
+见 `types.ts`：`QuickAccessItem { title, url, icon, addedAt }`、`Hitokoto`（一言 API 响应）、`QuoteCache { initialized, slots[2], active }`（一言双缓存位 + 使用位标记，见 `docs/quote_api.md`）、`BookmarkFolderOption { id, title, path }`、`Settings`。快捷访问数据来源由设置项 `quickAccessMode`（`manual` / `bookmark`）决定：`manual` 读 `quickAccess` store，`bookmark` 读 `bookmarkDock` store；后者通过 `bookmarkFolderId` 指定来源文件夹（默认为空，需在设置面板选择）。
 
 ### 5.4 配置导入/导出
 

@@ -63,8 +63,8 @@ function createSettingsStore() {
 	return {
 		subscribe,
 		async load(): Promise<void> {
-			await StorageManager.initDefaults();
-			const items = await StorageManager.getAll();
+			// 一次性读取全部数据并补写缺失默认值，避免启动时对 chrome.storage 重复全量读取导致卡顿。
+			const items = await StorageManager.initDefaults();
 			set({
 				backgroundType: useFallback(items[STORAGE_KEYS.BACKGROUND_TYPE], defaults.backgroundType) as BackgroundType,
 				backgroundImage: useFallback(items[STORAGE_KEYS.BACKGROUND_IMAGE], defaults.backgroundImage) as string,
@@ -303,6 +303,16 @@ function createQuoteStore() {
 		return (await res.json()) as Hitokoto;
 	}
 
+	// 拉取两条不同的一言；若重复则重试，用于首次初始化填充两个缓存位。
+	async function fetchTwoDistinct(): Promise<[Hitokoto, Hitokoto]> {
+		const first = await fetchQuote();
+		let second = await fetchQuote();
+		for (let i = 0; i < 3 && second.uuid === first.uuid; i++) {
+			second = await fetchQuote();
+		}
+		return [first, second];
+	}
+
 	function display(data: Hitokoto) {
 		const source = data.from
 			? data.from_who
@@ -312,32 +322,136 @@ function createQuoteStore() {
 		set({ text: data.hitokoto || '', source, loading: false });
 	}
 
-	async function load(): Promise<void> {
-		set({ text: msg('quote.loading'), source: '', loading: true });
+	// 将本地缺省一言作为展示（首个可用值优先，缺省兜底）。
+	function displayDefault() {
+		display({ hitokoto: msg('quote.fallbackText'), from: msg('quote.author') });
+	}
+
+	// 展示当前 active 位；该位无数据时空缺缺省兜底。
+	// 若该槽位尚无展示起点（shownAt），则以此刻作为其本次展示的开始时间（按展示时长计）。
+	function showActive(state: QuoteCache) {
+		const slot = state.slots[state.active];
+		if (slot.shownAt === undefined) slot.shownAt = Date.now();
+		if (slot.data) display(slot.data);
+		else displayDefault();
+	}
+
+	// 构造一份空状态（两个空缓存位，active 指向 0）。
+	function emptyState(): QuoteCache {
+		return {
+			initialized: false,
+			slots: [
+				{ data: null, timestamp: 0 },
+				{ data: null, timestamp: 0 }
+			],
+			active: 0
+		};
+	}
+
+	// 翻转使用位下标（0<->1）。
+	function flip(active: 0 | 1): 0 | 1 {
+		return active === 0 ? 1 : 0;
+	}
+
+	// 异步网络请求：仅在“刚被轮换掉”的空闲槽位（非 active）为空时请求，取得后填充该槽，
+	// 绝不直接更新界面；槽位非空（仍有可轮换内容）时不请求，避免覆盖未用内容。
+	async function fillIdle(state: QuoteCache): Promise<void> {
+		const idle = state.slots[1 - state.active];
+		if (idle.data) return; // 被轮换槽位非空：不请求，保留其内容。
 		try {
-			const cached = (await StorageManager.get(STORAGE_KEYS.QUOTE_CACHE)) as QuoteCache | undefined;
-			if (cached && cached.data && Date.now() - cached.timestamp < CACHE_EXPIRY) {
-				display(cached.data);
-				return;
-			}
 			const data = await fetchQuote();
-			display(data);
-			await StorageManager.set(STORAGE_KEYS.QUOTE_CACHE, { data, timestamp: Date.now() });
+			state.slots[1 - state.active] = { data, timestamp: Date.now() };
+			await StorageManager.set(STORAGE_KEYS.QUOTE_CACHE, state);
 		} catch (err) {
-			console.error('获取一言失败:', err);
-			display({
-				hitokoto: msg('quote.fallbackText'),
-				from: msg('quote.author')
-			});
+			console.error('非活跃槽一言填补失败:', err);
 		}
+	}
+
+	async function load(): Promise<void> {
+		// 3. 新打开：显示默认，随后并行填充两个缓存位。
+		const state =
+			((await StorageManager.get(STORAGE_KEYS.QUOTE_CACHE)) as QuoteCache) || emptyState();
+		if (!state.initialized) {
+			displayDefault();
+			state.initialized = true;
+			try {
+				const [first, second] = await fetchTwoDistinct();
+				state.slots[0] = { data: first, timestamp: Date.now() };
+				state.slots[1] = { data: second, timestamp: Date.now() };
+				state.active = 0;
+				await StorageManager.set(STORAGE_KEYS.QUOTE_CACHE, state);
+			} catch (err) {
+				console.error('一言初始化拉取失败:', err);
+			}
+			return;
+		}
+
+		// 1. 自动轮换：以「展示时长」判断过期——当前槽位开始展示至今是否超过 CACHE_EXPIRY。
+		const current = state.slots[state.active];
+		const idle = state.slots[1 - state.active];
+		const shownAt = current.shownAt ?? current.timestamp;
+		const expired = Date.now() - shownAt >= CACHE_EXPIRY;
+
+		if (expired) {
+			if (idle.data) {
+				// 另一槽位非空：切换另一槽位为主要槽位并显示，将其内容清空，再走网络更新流程。
+				const prev = state.active;
+				state.active = flip(state.active);
+				state.slots[prev] = { data: null, timestamp: 0, shownAt: undefined }; // 被轮换掉的槽位置空。
+				showActive(state);
+			} else {
+				// 另一槽位为空：不变更槽位，仅展示当前（空则缺省）并走网络更新流程。
+				showActive(state);
+			}
+		} else {
+			// 未过期：不轮换，展示当前槽位，但仍走网络更新流程以备不时之需。
+			showActive(state);
+		}
+
+		// 4. 一律尝试网络更新：fillIdle 会先判断被轮换（空闲）槽位是否为空，非空则不请求。
+		await fillIdle(state);
 	}
 
 	return {
 		subscribe,
 		load,
 		async refresh(): Promise<void> {
-			await StorageManager.remove(STORAGE_KEYS.QUOTE_CACHE);
-			await load();
+			const state =
+				((await StorageManager.get(STORAGE_KEYS.QUOTE_CACHE)) as QuoteCache) || emptyState();
+			if (!state.initialized) {
+				await load(); // 尚未初始化：按“新打开”处理。
+				return;
+			}
+
+			// 2. 手动刷新 / 重新开启：检查另一槽位是否为空。
+			const idle = state.slots[1 - state.active];
+			if (idle.data) {
+				// 另一槽位非空：切换到该槽位显示，将被轮换掉的槽位置空，再走网络更新流程。
+				const prev = state.active;
+				state.active = flip(state.active);
+				state.slots[prev] = { data: null, timestamp: 0, shownAt: undefined };
+				showActive(state);
+			} else {
+				// 另一槽位为空：不变更槽位，仅走网络更新流程。
+				const current = state.slots[state.active];
+				if (!current.data) {
+					// 当前槽位也为空：填充默认并尝试更新两个槽位。
+					displayDefault();
+					try {
+						const [first, second] = await fetchTwoDistinct();
+						state.slots[0] = { data: first, timestamp: Date.now() };
+						state.slots[1] = { data: second, timestamp: Date.now() };
+						await StorageManager.set(STORAGE_KEYS.QUOTE_CACHE, state);
+					} catch (err) {
+						console.error('一言刷新填充失败:', err);
+					}
+					return;
+				}
+				showActive(state); // 当前有内容，保持展示（不变更槽位）。
+			}
+
+			// 网络更新：fillIdle 先判断被轮换（空闲）槽位是否为空，非空则不请求。
+			await fillIdle(state);
 		},
 		async clearCache(): Promise<void> {
 			await StorageManager.remove(STORAGE_KEYS.QUOTE_CACHE);

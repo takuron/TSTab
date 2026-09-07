@@ -133,27 +133,43 @@ export const StorageManager = {
 		return value !== undefined && value !== null ? (value as T) : defaultValue;
 	},
 
-	/** 首次运行时写入默认配置（仅写入缺失项）。 */
-	async initDefaults(): Promise<void> {
-		const existing = await this.getAll();
+	/**
+	 * 首次运行时写入默认配置（仅写入缺失项）。
+	 * 传入已读取的全量数据可复用，避免启动时对 chrome.storage 重复全量读取造成卡顿；
+	 * 返回补写默认值后的完整存储数据，供调用方直接使用。
+	 *
+	 * @param existing 可选，调用方已读取的存储数据；传入后本次内部不再读取
+	 * @returns 补写默认值后的完整存储数据
+	 */
+	async initDefaults(existing?: Record<string, unknown>): Promise<Record<string, unknown>> {
+		const all = existing ?? (await this.getAll());
+		if (Object.keys(all).length === 0) {
+			// 首次运行：整批写入默认值以尽早填充，避免逐个键导致多次写。
+			await this.setMultiple(DEFAULT_CONFIG as Record<string, unknown>);
+			return all;
+		}
 		const configKeyMap: Record<keyof typeof DEFAULT_CONFIG, string> = {
 			backgroundType: STORAGE_KEYS.BACKGROUND_TYPE,
 			backgroundImage: STORAGE_KEYS.BACKGROUND_IMAGE,
 			searchEngine: STORAGE_KEYS.SEARCH_ENGINE,
 			quoteEnabled: STORAGE_KEYS.QUOTE_ENABLED,
-		quoteTypes: STORAGE_KEYS.QUOTE_TYPES,
-		copyProtection: STORAGE_KEYS.COPY_PROTECTION,
-		quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION,
-		quickAccessMode: STORAGE_KEYS.QUICK_ACCESS_MODE,
-		bookmarkFolderId: STORAGE_KEYS.BOOKMARK_FOLDER_ID,
-		usePresetIcons: STORAGE_KEYS.USE_PRESET_ICONS,
-		locale: STORAGE_KEYS.LOCALE
-	};
+			quoteTypes: STORAGE_KEYS.QUOTE_TYPES,
+			copyProtection: STORAGE_KEYS.COPY_PROTECTION,
+			quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION,
+			quickAccessMode: STORAGE_KEYS.QUICK_ACCESS_MODE,
+			bookmarkFolderId: STORAGE_KEYS.BOOKMARK_FOLDER_ID,
+			usePresetIcons: STORAGE_KEYS.USE_PRESET_ICONS,
+			locale: STORAGE_KEYS.LOCALE
+		};
 		const updates: Record<string, unknown> = {};
 		for (const key of Object.keys(DEFAULT_CONFIG) as (keyof typeof DEFAULT_CONFIG)[]) {
 			const storageKey = configKeyMap[key];
-			if (existing[storageKey] === undefined) updates[storageKey] = DEFAULT_CONFIG[key];
+			if (all[storageKey] === undefined) updates[storageKey] = DEFAULT_CONFIG[key];
 		}
-		if (Object.keys(updates).length) await this.setMultiple(updates);
+		if (Object.keys(updates).length) {
+			await this.setMultiple(updates);
+			return { ...all, ...updates };
+		}
+		return all;
 	}
 };

@@ -11,10 +11,15 @@
 
 	let openSettings = false;
 	let quoteEnabledRef = false;
+	let quoteBooted = false;
+	// 背景图延迟到首帧绘制后再应用，避免大图（预设/URL/base64）解码阻塞正文渲染。
+	let bgReady = false;
 
 	onMount(async () => {
-		await settings.load();
-		await quickAccess.load();
+		// settings 与 quickAccess 相互独立，并行加载缩短启动等待。
+		await Promise.all([settings.load(), quickAccess.load()]);
+		// 双帧 rAF 确保首帧完全绘制后，再加载背景图，实现“先进入首页，后加载背景”。
+		requestAnimationFrame(() => requestAnimationFrame(() => (bgReady = true)));
 	});
 
 	// 快捷访问开启书签模式时，随文件夹变化同步加载书签 Dock。
@@ -22,14 +27,19 @@
 		bookmarkDock.load($settings.bookmarkFolderId);
 	}
 
-	// 首次就绪或“从关闭变为开启”时加载一言
+	// 一言仅在开启时拉取：首次就绪走缓存；由“关闭→开启”时额外强制拉取一次新内容。
+	// quoteEnabledRef 记录上一时刻的开启状态以识别上升沿，quoteBooted 区分首次就绪。
 	$: {
-		if ($settings.ready && $settings.quoteEnabled) {
-			if (!quoteEnabledRef) {
-				quoteEnabledRef = true;
+		const enabled = $settings.ready && $settings.quoteEnabled;
+		if (enabled && !quoteEnabledRef) {
+			if (!quoteBooted) {
+				quoteBooted = true;
 				quote.load();
+			} else {
+				quote.refresh();
 			}
-		} else {
+			quoteEnabledRef = true;
+		} else if (!enabled) {
 			quoteEnabledRef = false;
 		}
 	}
@@ -39,13 +49,13 @@
 	<title>{$_('newtab.title')}</title>
 </svelte:head>
 
-<!-- 背景 -->
+<!-- 背景：首帧先以渐变占位，bgReady（首帧绘制完毕）后才应用真实背景图，避免大图解码阻塞首屏。 -->
 <div
-	class="fixed inset-0 -z-10 bg-cover bg-center animate-[fade-blur-in_0.65s_cubic-bezier(0.25,0.46,0.45,0.94)_forwards]"
-	style="background-image: {$backgroundStyle || 'linear-gradient(135deg, rgba(91,134,229,0.6) 0%, rgba(54,209,220,0.6) 100%)'}"
+	class="fixed inset-0 -z-10 bg-cover bg-center animate-[fade-blur-in_0.65s_cubic-bezier(0.25,0.45,0.45,0.94)_forwards]"
+	style="background-image: {$backgroundStyle && bgReady ? $backgroundStyle : 'linear-gradient(135deg, rgba(91,134,229,0.6) 0%, rgba(54,209,220,0.6) 100%)'}"
 ></div>
 <!-- 使用图片背景时叠加暗色调层，提升文字可读性 -->
-{#if $backgroundStyle}
+{#if $backgroundStyle && bgReady}
 	<div class="fixed inset-0 -z-10 bg-black/35"></div>
 {/if}
 

@@ -20,6 +20,7 @@
 
 - [构建与扩展环境说明](docs/build_setup.md)
 - [TSTab 前端架构](docs/architecture.md)
+- [一言 API 与双缓存机制](docs/quote_api.md)
 - [TODO 列表与路线图](docs/TODO.md)
 - [变更日志](docs/Changelog.md)
 

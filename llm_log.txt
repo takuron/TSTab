@@ -21,3 +21,8 @@
 [2026-09-04T22:16:11+08:00] 新增 Pixiv 预置图标（自 selfh.st/icons 的 selfhst/icons 库下载）；新增设置项 usePresetIcons（默认开启）控制预置图标替换，接入 stores/config/storage/SettingsModal/i18n，并同步架构文档与 Changelog。
 [2026-09-04T22:24:08+08:00] 按规则调整预置图标：仅内置在线服务与 Linux 发行版官网，删除本地自托管软件（docker/kubernetes/nextcloud/syncthing/jellyfin/emby）图标；新增 Google 服务、邮件、Disney+、Bitwarden/DeepL/云盘、游戏平台及 Linux 发行版图标，更新 dockIcons.ts 与 Changelog。
 [2026-09-04T22:33:39+08:00] 修复预置图标域名匹配 Bug：映射键改为带完整 TLD 的域名并采用全域名+子域通配（endsWith .key），按域名长度降序优先使具体子域命中专用图标（chat.deepseek.com/app.ubuntu.com/gemini.google.com 均修复）；域名按类型注释分组排序；补齐 bitbucket/codeberg 并同步文档与 Changelog。
+[2026-09-07T19:09:41+08:00] 优化启动性能：settings.load 改为经 initDefaults 单次全量读取并复用数据，消除启动时对 chrome.storage 的重复全量读取；newtab 中 settings 与 quickAccess 并行加载，缓解扩展模式下启动卡顿。
+[2026-09-07T19:27:39+08:00] 一言改为双缓存轮换机制：新增 docs/quote_api.md 详述独立 API 结构与双缓存流程；首次展示本地缺省并拉取两条（显示槽/缓存槽），后续缓存非空则晋升轮换、为空则暂停并尝试网络填补；手动/重新开启刷新立即拉新并轮换；移除 CACHE_EXPIRY。
+[2026-09-07T19:36:01+08:00] 一言重构为「双缓存位+使用位置标记」结构（QuoteCache: slots[2]+active）。界面切换显示（到期轮换/手动刷新）一律仅切换 active 下标并从另一槽读取，不发网络请求；网络只填充空闲槽且不更新界面，UI 更新与网络完全解耦；保留 CACHE_EXPIRY 到期轮换规则。
+[2026-09-07T19:50:34+08:00] 修复一言手动刷新不生效：按用户逻辑重构 load/refresh。自动轮换-当前槽过期则另一槽非空时切换+清空被轮换槽、为空则不变更仅网络请求；手动刷新-另一槽非空则切换+清空、为空则不变更（当前也空则填默认并更新两槽）；网络统一由 fillIdle 只在非活跃槽为空时异步填充，绝不直接更新界面。
+[2026-09-07T19:55:07+08:00] 修复一言过期判断与网络更新流程：过期改用 slot.shownAt（切换为 active 开始展示的时间）而非 timestamp 写入时间计算，保证每个槽位展示满 CACHE_EXPIRY 时长；自动轮换无论是否轮换都走网络更新流程，fillIdle 在请求前先判断被轮换槽位为空才拉取，非空则保留内容不发请求。
