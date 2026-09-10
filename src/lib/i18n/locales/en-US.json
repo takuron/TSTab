@@ -95,7 +95,16 @@
 		"aboutTitle": "About",
 		"aboutDesc": "A minimal new tab rebuilt with SvelteKit + Tailwind CSS v4 + DaisyUI 5",
 		"aboutImage": "Default background:",
-		"aboutRef": "Inspired by"
+		"aboutRef": "Inspired by",
+		"licenseTitle": "Open source licenses",
+		"licenseIntro": "This extension distributes the following third-party components. Their copyright remains with their respective authors, and each is used under its own license. Click a name to view its source.",
+		"licenseNotice": {
+			"snow": "Feature & UI reference; some icons",
+			"unsplash": "Default background",
+			"hitokoto": "Daily quote content service"
+		},
+		"licenseSelf": "TSTab itself is released under the GNU GPL v3.0 license.",
+		"licenseRepo": "View source"
 	},
 	"msg": {
 		"bgUrlEmpty": "Please enter an image URL",

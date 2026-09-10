@@ -2,6 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { MAX_IMAGE_SIZE } from '$lib/config';
 	import { SUPPORTED_LOCALES } from '$lib/i18n';
+	import { LICENSE_GROUPS, PROJECT_URL } from '$lib/licenses';
 	import { isExtension, StorageManager } from '$lib/storage';
 	import { bookmarkDock, faviconUrl, quickAccess, quote, settings } from '$lib/stores';
 
@@ -535,6 +536,29 @@
 						<a href="https://unsplash.com/photos/a-snow-covered-mountain-with-a-clear-blue-sky-g-6gKgRC30k" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Kévin JINER</a>
 					</p>
 					<p>{$_('settings.aboutRef')} <a href="https://github.com/ltba/Snow" target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">Snow</a></p>
+					</div>
+
+					<!-- 开源许可：列出运行时依赖、构建工具与引用素材的许可与来源地址 -->
+					<div class="pt-4 mt-4 border-t border-white/10">
+						<h4 class="text-sm font-semibold text-white mb-2">{$_('settings.licenseTitle')}</h4>
+						<p class="text-xs text-white/60 leading-relaxed mb-3">{$_('settings.licenseIntro')}</p>
+
+						<div class="space-y-1.5">
+							{#each LICENSE_GROUPS as group}
+								<p class="text-xs text-white/60 leading-relaxed m-0">
+									{#each group as item, i (item.name)}
+										{#if i > 0}<span class="text-white/30"> · </span>{/if}
+										<a href={item.url} target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">{item.name}</a>
+										<span class="text-white/40">({item.license}{#if item.notice} · {item.notice}{/if}{#if item.noticeKey} · {$_('settings.licenseNotice.' + item.noticeKey)}{/if})</span>
+									{/each}
+								</p>
+							{/each}
+						</div>
+
+						<p class="text-xs text-white/60 leading-relaxed mt-3">
+							{$_('settings.licenseSelf')}
+							<a href={PROJECT_URL} target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">{$_('settings.licenseRepo')}</a>
+						</p>
 					</div>
 				</section>
 			</div>

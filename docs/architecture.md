@@ -47,6 +47,7 @@ src/
       storage.ts            # StorageManager：chrome.storage.local 封装，非扩展环境降级 localStorage
       stores.ts             # settings / quickAccess / quote 三个 store 及 applyPosition / faviconUrl 工具函数
       dockIcons.ts          # 快捷访问预置图标：常见域名 -> dashboard-icons 本地 SVG，presetIconFor 命中解析
+      licenses.ts           # 第三方开源许可清单：运行时依赖 / 构建工具 / 引用素材，供设置「关于 → 开源许可」展示
       search.ts             # normalizeUrlOrNull / buildSearchUrl
     i18n/
       index.js            # svelte-i18n 初始化：注册语言包、init、与 settings.locale 偏好同步、resolveLocale
@@ -58,7 +59,7 @@ src/
       SearchBar.svelte        # 搜索输入 + 引擎切换（DaisyUI dropdown），提交后 window.location 跳转
       QuoteCard.svelte        # 一言展示（纯展示，数据来自 quote store）
       QuickAccessDock.svelte  # 底部/顶部 Dock，位置由 settings.quickAccessPosition 控制
-      SettingsModal.svelte    # 设置弹窗：语言、背景、引擎、一言、快捷访问增删改拖拽排序、配置导入/导出
+      SettingsModal.svelte    # 设置弹窗：语言、背景、引擎、一言、快捷访问增删改拖拽排序、配置导入/导出、开源许可清单
       Cursor.svelte           # 自定义圆点光标（仅桌面端 >768px，lerp 平滑跟随，直接操作 DOM）
       Security.svelte         # 复制保护：按 settings.copyProtection 动态挂载/卸载 contextmenu/copy/cut/keydown 监听
   routes/

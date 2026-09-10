@@ -95,7 +95,16 @@
 		"aboutTitle": "关于",
 		"aboutDesc": "基于 SvelteKit + Tailwind CSS v4 + DaisyUI 5 重写的简洁新标签页",
 		"aboutImage": "默认背景图：",
-		"aboutRef": "功能参考"
+		"aboutRef": "功能参考",
+		"licenseTitle": "开源许可",
+		"licenseIntro": "本扩展的分发包含以下第三方组件，其版权归各自作者所有，并分别遵循对应许可；点击名称可查看来源。",
+		"licenseNotice": {
+			"snow": "功能与界面参考，部分图标来源",
+			"unsplash": "默认背景图",
+			"hitokoto": "每日一言内容服务"
+		},
+		"licenseSelf": "本项目（TSTab）以 GNU GPL v3.0 许可发布。",
+		"licenseRepo": "查看源码"
 	},
 	"msg": {
 		"bgUrlEmpty": "请输入图片 URL",

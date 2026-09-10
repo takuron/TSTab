@@ -8,6 +8,7 @@
 
 ### Added
 
+- 设置面板「关于」区新增独立的「开源许可」小节：以紧凑的单行分组罗列运行时依赖 / 构建工具 / 引用素材，逐项以圆点分隔并在括号内标注许可与 Copyright，另说明本项目 GPL v3 许可；新增 `src/lib/licenses.ts` 集中维护该清单
 - 修复预置图标域名匹配不准确的问题：映射改为带完整 TLD 的域名，并按「全域名或任意子域」通配匹配（如 chat.deepseek.com、app.ubuntu.com、gemini.google.com 均能正确命中），更具体子域优先；域名按类型注释分组排序
 - 快捷访问预置图标：内置常见站点（Google/百度/Bing/GitHub/哔哩哔哩/YouTube 等）的 dashboard-icons 图标，命中域名时默认替换 Dock 图标（本地 SVG，无网络请求）
 - 预置图标扩充：新增 AI 助手（OpenAI/ChatGPT/Gemini/Grok/DeepSeek/Z.ai/Claude/Perplexity/通义千问/Kimi 等）、设计（Figma/Behance/Excalidraw/Framer）、云服务商（Vercel/DigitalOcean/Azure/Netlify/Railway 等）、动漫（Pixiv/Crunchyroll/MangaDex）、音乐（Apple Music/YouTube Music/Deezer）与多邻国等 30+ 站点
