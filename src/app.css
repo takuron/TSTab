@@ -119,3 +119,9 @@ body {
 *::-webkit-scrollbar-thumb:hover {
 	background-color: rgba(255, 255, 255, 0.5);
 }
+
+/* 工具栏弹窗宽度与背景；集中维护样式，避免组件全局样式污染。 */
+body:has([data-popup]) {
+	width: 320px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}

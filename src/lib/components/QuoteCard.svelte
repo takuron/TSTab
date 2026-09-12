@@ -1,4 +1,5 @@
 <script>
+	// 根据一言 store 展示正文、出处与加载状态。
 	import { _ } from 'svelte-i18n';
 	import { quote } from '$lib/stores';
 </script>

@@ -2,7 +2,10 @@
 	"engine": {
 		"google": "Google",
 		"baidu": "百度",
-		"bing": "Bing"
+		"bing": "Bing",
+		"duckduckgo": "DuckDuckGo",
+		"startpage": "Startpage",
+		"sogou": "搜狗"
 	},
 	"search": {
 		"placeholder": "搜索或输入网址...",
@@ -40,7 +43,8 @@
 		"remove": "删除",
 		"done": "完成",
 		"add": "添加",
-		"apply": "应用"
+		"apply": "应用",
+		"dismiss": "关闭提示"
 	},
 	"settings": {
 		"dialogAria": "设置",
@@ -58,7 +62,7 @@
 		"bgChooseFile": "选择文件",
 		"bgLocalHint": "支持 JPG、PNG、GIF 等格式，建议 1920x1080 分辨率",
 		"bgUrlLabel": "图片 URL",
-		"bgUrlHint": "图片必须允许跨域访问（CORS）",
+		"bgUrlHint": "使用可直接访问的 HTTP(S) 图片链接",
 		"searchTitle": "搜索设置",
 		"searchEngineLabel": "默认搜索引擎",
 		"searchLanguageTitle": "搜索与语言",
@@ -66,7 +70,7 @@
 		"qaAdd": "添加网站",
 		"qaNamePlaceholder": "网站名称（如：GitHub）",
 		"qaAddHint": "提示：访问目标网站时，也可以点击扩展图标快速添加",
-		"qaAdded": "已添加的网站（拖拽排序）",
+		"qaAdded": "已添加的网站（可拖拽或用按钮排序）",
 		"qaEmpty": "暂无快捷访问网站",
 		"qaEditNamePlaceholder": "网站名称",
 		"qaEditUrlPlaceholder": "网站地址",
@@ -104,13 +108,20 @@
 			"hitokoto": "每日一言内容服务"
 		},
 		"licenseSelf": "本项目（TSTab）以 GNU GPL v3.0 许可发布。",
-		"licenseRepo": "查看源码"
+		"licenseRepo": "查看源码",
+		"qaMoveUp": "上移 {title}",
+		"qaMoveDown": "下移 {title}",
+		"qaPosition": "Dock 位置",
+		"qaTop": "顶部",
+		"qaBottom": "底部",
+		"bgUrlPlaceholder": "https://example.com/image.jpg",
+		"qaUrlPlaceholder": "https://github.com"
 	},
 	"msg": {
 		"bgUrlEmpty": "请输入图片 URL",
 		"bgUrlInvalid": "请输入有效的 URL 地址",
 		"bgUrlDone": "URL 图片已设置",
-		"bgUrlFailed": "无法加载该图片，请检查 URL 是否正确或图片是否允许跨域访问",
+		"bgUrlFailed": "图片加载失败，请检查链接是否可访问。",
 		"bgFileType": "请选择图片文件",
 		"bgFileSize": "图片文件过大，请选择小于 5MB 的图片",
 		"bgLocalDone": "本地图片已设置",
@@ -126,7 +137,10 @@
 		"importConfirm": "确定要导入配置吗？\n\n导入后将覆盖当前所有设置。",
 		"importConfirmWithDate": "确定要导入配置吗？\n\n导出时间：{time}\n\n导入后将覆盖当前所有设置。",
 		"importDone": "配置已导入成功",
-		"importFailed": "导入配置失败，请检查文件格式是否正确"
+		"importFailed": "导入失败，配置可能无效或存储空间不足。",
+		"operationFailed": "操作未完成，请检查存储空间或稍后重试。",
+		"importTooLarge": "配置文件不能超过 10 MB。",
+		"bgFileReadFailed": "图片读取失败，请重新选择文件。"
 	},
 	"popup": {
 		"title": "添加到快捷访问",
@@ -143,6 +157,7 @@
 		"statusRemoveFailed": "移除失败，请重试",
 		"nonExt": "当前为非扩展环境，无法读取当前标签页。请在扩展中打开本弹窗使用。",
 		"add": "添加到快捷访问",
-		"remove": "从快捷访问移除"
+		"remove": "从快捷访问移除",
+		"unsupportedUrl": "仅支持添加 HTTP(S) 网页。"
 	}
 }

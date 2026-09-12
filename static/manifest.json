@@ -6,7 +6,7 @@
 	"chrome_url_overrides": {
 		"newtab": "newtab.html"
 	},
-	"permissions": ["storage", "tabs", "activeTab", "bookmarks"],
+	"permissions": ["storage", "activeTab", "bookmarks"],
 	"host_permissions": ["https://v1.hitokoto.cn/*"],
 	"icons": {
 		"16": "icons/icon16.png",

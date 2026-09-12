@@ -2,7 +2,10 @@
 	"engine": {
 		"google": "Google",
 		"baidu": "Baidu",
-		"bing": "Bing"
+		"bing": "Bing",
+		"duckduckgo": "DuckDuckGo",
+		"startpage": "Startpage",
+		"sogou": "Sogou"
 	},
 	"search": {
 		"placeholder": "Search or enter a URL...",
@@ -40,7 +43,8 @@
 		"remove": "Delete",
 		"done": "Done",
 		"add": "Add",
-		"apply": "Apply"
+		"apply": "Apply",
+		"dismiss": "Dismiss"
 	},
 	"settings": {
 		"dialogAria": "Settings",
@@ -58,7 +62,7 @@
 		"bgChooseFile": "Choose file",
 		"bgLocalHint": "Supports JPG, PNG, GIF, etc. 1920x1080 recommended",
 		"bgUrlLabel": "Image URL",
-		"bgUrlHint": "The image must allow cross-origin access (CORS)",
+		"bgUrlHint": "Use a directly accessible HTTP(S) image URL",
 		"searchTitle": "Search",
 		"searchEngineLabel": "Default search engine",
 		"searchLanguageTitle": "Search & Language",
@@ -66,7 +70,7 @@
 		"qaAdd": "Add a site",
 		"qaNamePlaceholder": "Site name (e.g. GitHub)",
 		"qaAddHint": "Tip: you can also click the extension icon to quickly add the current site.",
-		"qaAdded": "Added sites (drag to reorder)",
+		"qaAdded": "Added sites (drag or use buttons to reorder)",
 		"qaEmpty": "No quick access sites yet",
 		"qaEditNamePlaceholder": "Site name",
 		"qaEditUrlPlaceholder": "Site URL",
@@ -104,13 +108,20 @@
 			"hitokoto": "Daily quote content service"
 		},
 		"licenseSelf": "TSTab itself is released under the GNU GPL v3.0 license.",
-		"licenseRepo": "View source"
+		"licenseRepo": "View source",
+		"qaMoveUp": "Move {title} up",
+		"qaMoveDown": "Move {title} down",
+		"qaPosition": "Dock position",
+		"qaTop": "Top",
+		"qaBottom": "Bottom",
+		"bgUrlPlaceholder": "https://example.com/image.jpg",
+		"qaUrlPlaceholder": "https://github.com"
 	},
 	"msg": {
 		"bgUrlEmpty": "Please enter an image URL",
 		"bgUrlInvalid": "Please enter a valid URL",
 		"bgUrlDone": "URL image set",
-		"bgUrlFailed": "Could not load the image. Check the URL or CORS policy.",
+		"bgUrlFailed": "Could not load the image. Check that its URL is accessible.",
 		"bgFileType": "Please choose an image file",
 		"bgFileSize": "Image too large. Please choose one under 5MB.",
 		"bgLocalDone": "Local image set",
@@ -126,7 +137,10 @@
 		"importConfirm": "Import this config?\n\nIt will overwrite all current settings.",
 		"importConfirmWithDate": "Import this config?\n\nExported: {time}\n\nIt will overwrite all current settings.",
 		"importDone": "Config imported successfully",
-		"importFailed": "Import failed. Please check the file format."
+		"importFailed": "Import failed. The config may be invalid or storage may be full.",
+		"operationFailed": "The operation could not be completed. Check available storage or try again.",
+		"importTooLarge": "Config files must be no larger than 10 MB.",
+		"bgFileReadFailed": "Could not read the image. Please choose it again."
 	},
 	"popup": {
 		"title": "Add to Quick Access",
@@ -143,6 +157,7 @@
 		"statusRemoveFailed": "Remove failed. Please try again.",
 		"nonExt": "Non-extension environment. Please open this popup inside the extension.",
 		"add": "Add to Quick Access",
-		"remove": "Remove from Quick Access"
+		"remove": "Remove from Quick Access",
+		"unsupportedUrl": "Only HTTP(S) web pages can be added."
 	}
 }

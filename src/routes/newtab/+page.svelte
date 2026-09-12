@@ -1,4 +1,5 @@
 <script>
+	// 新标签页入口：加载本地状态并组装展示组件。
 	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import QuickAccessDock from '$lib/components/QuickAccessDock.svelte';
@@ -7,7 +8,7 @@
 	import Security from '$lib/components/Security.svelte';
 	import SettingsModal from '$lib/components/SettingsModal.svelte';
 	import TimeDisplay from '$lib/components/TimeDisplay.svelte';
-	import { backgroundStyle, bookmarkDock, quickAccess, quote, settings } from '$lib/stores';
+	import { backgroundStyle, bookmarkDock, quickAccess, quote, runAction, settings } from '$lib/stores';
 
 	let openSettings = false;
 	let quoteEnabledRef = false;
@@ -17,14 +18,16 @@
 
 	onMount(async () => {
 		// settings 与 quickAccess 相互独立，并行加载缩短启动等待。
-		await Promise.all([settings.load(), quickAccess.load()]);
+		await runAction(() => Promise.all([settings.load(), quickAccess.load()]));
 		// 双帧 rAF 确保首帧完全绘制后，再加载背景图，实现“先进入首页，后加载背景”。
 		requestAnimationFrame(() => requestAnimationFrame(() => (bgReady = true)));
 	});
 
 	// 快捷访问开启书签模式时，随文件夹变化同步加载书签 Dock。
-	$: if ($settings.ready && $settings.quickAccessMode === 'bookmark') {
-		bookmarkDock.load($settings.bookmarkFolderId);
+	$: bookmarkFolder = $settings.ready && $settings.quickAccessMode === 'bookmark' ? $settings.bookmarkFolderId : null;
+	$: if ($settings.ready) {
+		const folder = bookmarkFolder;
+		runAction(() => bookmarkDock.load(folder));
 	}
 
 	// 一言仅在开启时拉取：首次就绪走缓存；由“关闭→开启”时额外强制拉取一次新内容。
@@ -34,9 +37,9 @@
 		if (enabled && !quoteEnabledRef) {
 			if (!quoteBooted) {
 				quoteBooted = true;
-				quote.load();
+				runAction(() => quote.load());
 			} else {
-				quote.refresh();
+				runAction(() => quote.refresh());
 			}
 			quoteEnabledRef = true;
 		} else if (!enabled) {
@@ -83,7 +86,7 @@
 			title={$_('newtab.refreshQuote')}
 			aria-label={$_('newtab.refreshQuote')}
 			class="w-12 h-12 rounded-full glass border border-white/20 text-white flex items-center justify-center cursor-pointer transition hover:bg-[#399fff]/30 hover:-translate-y-0.5 focus:outline-2 focus:outline-[#399fff] active:scale-95"
-			onclick={() => quote.refresh()}
+			onclick={() => runAction(() => quote.refresh())}
 		>
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 				<polyline points="23 4 23 10 17 10"></polyline>

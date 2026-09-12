@@ -1,4 +1,8 @@
+import type { SearchEngine } from './config';
+
+/** 快捷访问条目；id 在修改标题、URL 与排序时保持不变。 */
 export interface QuickAccessItem {
+	id: string;
 	title: string;
 	url: string;
 	icon: string;
@@ -26,10 +30,12 @@ export interface QuoteSlot {
 
 /**
  * 一言「双缓存位 + 使用位置标记」状态：两个缓存位 + 一个表示当前正在使用的位下标。
- * - UI 切换显示（含下载、刷新）一律通过切换 `active` 实现，不直接依赖网络。
- * - 网络拉取自只填充「空闲槽」（非 active 位），从不直接更新界面。
+ * - UI 切换显示（含到期轮换、刷新）一律通过切换 `active` 实现，不直接依赖网络。
+ * - 网络补充只填充「空闲槽」（非 active 位），从不直接更新界面。
  */
 export interface QuoteCache {
+	/** 每次切换或重置生成新标记，阻止旧请求覆盖新缓存。 */
+	revision?: string;
 	/** 是否已完成首次初始化（首次已成功拉取）。 */
 	initialized: boolean;
 	/** 两个缓存位，下标 0 / 1。 */
@@ -38,6 +44,7 @@ export interface QuoteCache {
 	active: 0 | 1;
 }
 
+/** 经过校验的一言响应字段。 */
 export interface Hitokoto {
 	hitokoto: string;
 	from?: string;
@@ -46,15 +53,17 @@ export interface Hitokoto {
 	[key: string]: unknown;
 }
 
+/** 持久化设置字段，与 DEFAULT_CONFIG 保持一致。 */
 export interface Settings {
-	backgroundType: string;
+	backgroundType: 'gradient' | 'preset' | 'local' | 'url';
 	backgroundImage: string;
-	searchEngine: string;
+	searchEngine: SearchEngine;
 	quoteEnabled: boolean;
 	quoteTypes: string[];
 	copyProtection: boolean;
 	quickAccessPosition: 'top' | 'bottom';
 	quickAccessMode: 'manual' | 'bookmark';
 	bookmarkFolderId: string | null;
-	locale: string;
+	locale: 'browser' | 'zh-CN' | 'en-US';
+	usePresetIcons: boolean;
 }

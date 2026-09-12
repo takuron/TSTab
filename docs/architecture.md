@@ -1,167 +1,95 @@
 # TSTab 前端架构
 
-本文档描述 TSTab 的整体架构、模块边界与数据流。任何结构性改动后必须同步更新本文档（见 `llm_readme.md` 第 3.1 节）。
+## 1 项目与模块边界
 
-## 1 项目概览
+TSTab 是 SvelteKit adapter-static 全预渲染的 Chrome/Edge MV3 新标签页扩展，使用 Svelte 5、Tailwind CSS v4、DaisyUI 5 dark 主题。界面参考 Snow，项目采用 GPL v3。
 
-TSTab 是一个浏览器「新标签页」扩展（Chrome MV3），使用 **SvelteKit（adapter-static，全预渲染）+ Svelte 5 + Tailwind CSS v4 + DaisyUI 5（dark 主题）** 构建。它是原生 HTML/CSS/JS 实现的参考扩展 [Snow](https://github.com/ltba/Snow) 的现代化重写，功能与视觉基本保持一致。
+依赖方向：`routes → components → stores → storage / validation / search → config / types`。组件不直接访问 `chrome.storage`；展示组件使用经典 Svelte store 与 `export let`，DOM 行为只放在组件内。
 
-核心功能：实时时间、多引擎智能搜索（可识别网址直达）、每日一言（hitokoto API + 本地缓存）、自定义背景（默认渐变 / 默认图片 / 本地图片 / URL）、macOS 风格快捷访问 Dock、复制保护、配置导入/导出。
+## 2 目录与职责
 
-## 2 分层架构
+| 文件 | 职责 |
+| --- | --- |
+| `src/lib/config.ts` | 默认设置、存储键、内置搜索引擎（`SEARCH_ENGINES` 与 `SearchEngine` 类型）、缓存与图片限制 |
+| `src/lib/types.ts` | Settings、QuickAccessItem、QuoteCache 等共享类型 |
+| `src/lib/storage.ts` | Chrome 本地存储、开发环境 localStorage、Web Locks 与变更监听 |
+| `src/lib/validation.ts` | 设置、URL/图片来源、快捷访问、缓存与配置备份校验；`searchEngine` 取值与内置引擎清单同步 |
+| `src/lib/controls.ts` | 表单控件 action，在保存失败时主动恢复已保存值 |
+| `src/lib/search.ts` | HTTP(S) URL 校验、搜索输入识别和引擎查询地址 |
+| `src/lib/stores.ts` | settings、quickAccess、bookmarkDock、quote、操作错误和导入导出 |
+| `src/lib/dockIcons.ts` | 域名与本地 SVG 预置图标映射 |
+| `src/lib/licenses.ts` | 设置面板中的第三方许可来源清单 |
+| `src/lib/i18n/index.js` | 语言包注册、浏览器语言归一化、设置同步 |
+| `src/lib/components/SettingsModal.svelte` | 原生模态 dialog、设置、背景、快捷访问编辑、导入导出 |
+| `src/lib/components/SearchBar.svelte` | 搜索输入与原生 select 引擎选择器 |
+| `src/lib/components/QuickAccessDock.svelte` | 按稳定 ID 渲染手动条目或书签，支持顶部/底部位置 |
+| `src/lib/components/Security.svelte` | 复制保护，放行输入、设置、按钮、链接与拖拽 |
+| `src/lib/components/TimeDisplay.svelte` / `QuoteCard.svelte` | 时间日期、一言展示 |
+| `src/routes/+layout.svelte` | 全局样式、html lang、存储变更监听、错误提示 |
+| `src/routes/newtab/+page.svelte` | 初始化本地数据，组装新标签页与按需加载一言 |
+| `src/routes/popup/+page.svelte` | 加载语言偏好，读取当前标签页并管理快捷访问 |
+| `tests/helpers.mjs` / `regressions.test.mjs` / `browser-smoke.mjs` | 独立页面上下文、共享锁/存储模拟及临时 Chromium 界面回归 |
 
-```
-┌─────────────────────────────────────────────┐
-│ routes（页面入口）                            │
-│   /newtab  -> build/newtab.html（新标签页）    │
-│   /popup   -> build/popup.html（工具栏弹窗）   │
-├─────────────────────────────────────────────┤
-│ components（展示组件，不含持久化逻辑）          │
-│   TimeDisplay / SearchBar / QuoteCard /      │
-│   QuickAccessDock / SettingsModal /          │
-│   Cursor / Security                          │
-├─────────────────────────────────────────────┤
-│ stores（响应式状态层，读写 StorageManager）     │
-│   settings / quickAccess / quote             │
-├─────────────────────────────────────────────┤
-│ lib 基础层                                   │
-│   storage.ts  StorageManager（chrome.storage  │
-│               + localStorage 降级）           │
-│   search.ts   URL 识别与搜索链接构造           │
-│   config.ts   常量 / 默认值 / 存储键名         │
-│   types.ts    共享类型                        │
-└─────────────────────────────────────────────┘
-```
+## 3 存储与并发
 
-**依赖方向自上而下**：组件不直接调用 `chrome.storage`，一律通过 store；store 不直接操作 DOM；`config.ts` / `types.ts` 是最底层，被所有层引用。修改时应保持该边界。
+`isExtension()` 判断 `chrome.storage.local` 是否可用；Chrome/Edge 使用 `chrome.storage.local`，本地开发使用 localStorage 的 `tstab:local` JSON 快照，兼容读取旧的逐键数据。单快照写入确保开发环境配额失败时不产生半份配置。
 
-## 3 目录结构
+所有写入，以及涉及旧数据的读取—修改—写入，使用同一个同源 Web Lock：`tstab:storage`。锁作用于同一扩展的所有页面，popup 和新标签页共享。生产扩展及 localhost 均支持该 API；不支持 Web Locks 的环境不会使用不安全的无锁写入。
 
-```
-src/
-  app.css                 # Tailwind/DaisyUI 入口 + 设计令牌 + glass 工具类 + 关键帧动画 + #snow-cursor 样式
-  app.html                # SvelteKit HTML 模板（data-theme=dark；lang 由客户端按 locale 动态写入）
-    lib/
-      config.ts             # STORAGE_KEYS、SEARCH_ENGINES、DEFAULT_CONFIG、CACHE_EXPIRY 等常量与类型别名
-      types.ts              # QuickAccessItem / Hitokoto / QuoteCache / Settings 接口
-      storage.ts            # StorageManager：chrome.storage.local 封装，非扩展环境降级 localStorage
-      stores.ts             # settings / quickAccess / quote 三个 store 及 applyPosition / faviconUrl 工具函数
-      dockIcons.ts          # 快捷访问预置图标：常见域名 -> dashboard-icons 本地 SVG，presetIconFor 命中解析
-      licenses.ts           # 第三方开源许可清单：运行时依赖 / 构建工具 / 引用素材，供设置「关于 → 开源许可」展示
-      search.ts             # normalizeUrlOrNull / buildSearchUrl
-    i18n/
-      index.js            # svelte-i18n 初始化：注册语言包、init、与 settings.locale 偏好同步、resolveLocale
-      locales/
-        zh-CN.json        # 简体中文语言包（默认 / fallback）
-        en-US.json        # 英文语言包
-    components/
-      TimeDisplay.svelte      # 时间与日期（日期按当前 locale 格式化），每秒 setInterval 刷新
-      SearchBar.svelte        # 搜索输入 + 引擎切换（DaisyUI dropdown），提交后 window.location 跳转
-      QuoteCard.svelte        # 一言展示（纯展示，数据来自 quote store）
-      QuickAccessDock.svelte  # 底部/顶部 Dock，位置由 settings.quickAccessPosition 控制
-      SettingsModal.svelte    # 设置弹窗：语言、背景、引擎、一言、快捷访问增删改拖拽排序、配置导入/导出、开源许可清单
-      Cursor.svelte           # 自定义圆点光标（仅桌面端 >768px，lerp 平滑跟随，直接操作 DOM）
-      Security.svelte         # 复制保护：按 settings.copyProtection 动态挂载/卸载 contextmenu/copy/cut/keydown 监听
-  routes/
-    +layout.js             # export const prerender = true（全部路由预渲染）
-    +layout.svelte         # 引入 app.css、导入 i18n（副作用）、同步 <html lang>，透传 slot
-    newtab/+page.svelte    # 新标签页：加载 settings/quickAccess，组装全部组件（backgroundType 为图片时叠加暗色调覆盖层）
-    popup/+page.svelte     # 弹窗：读取当前标签页（chrome.tabs.query），添加/移除快捷访问
-static/
-  manifest.json           # MV3 清单（构建时被 patch-manifest.mjs 补写 CSP 后复制到 build/）
-  icon.png               # 1024×1024 品牌源图（经无损压缩）
-  icon.svg               # 品牌图标的可编辑矢量重绘版
-  icons/                 # 16/48/128 像素扩展图标、品牌 SVG 与快捷访问图标
-  images/                # 内置背景图（取自 Snow，GPL v3）
-scripts/
-  patch-manifest.mjs      # 构建后处理：见第 6 节
-```
+- `StorageManager.transaction(action)` 给回调提供 `get/getAll/set/setMultiple/removeMultiple`，回调内使用此接口，不得嵌套调用加锁的公共方法，也不得等待网络。
+- Chrome 回调检查 `runtime.lastError` 并拒绝 Promise；页面状态在成功提交后才更新。
+- `settings.load()` 在锁内读取并修复缺失/异常字段；`settings.save(partial)` 校验增量设置后先乐观更新界面，再在锁内合并最新快照、只写指定字段，仅当合并结果与乐观界面不同步时才重新刷新界面。保存失败不回退、不报错，保持乐观界面。
+- `quickAccess.load()` 在锁内规范化旧数据、补充稳定 ID；增删改排序均重新读取最新列表。
+- 布局挂载时调用 `startStorageSync()`，通过 `StorageManager.subscribe()` 监听 Chrome storage 或开发环境 storage 事件，重新加载受影响的 store；布局销毁时清理监听。
+- 用户事件通过 `runAction()` 捕获失败，`operationError` 保存翻译键；页面及设置 dialog 显示可关闭的错误提示。设置保存自身不抛错，失败时保留乐观界面，因此不触发该提示。
 
-## 4 双环境模型（扩展 / 网页开发）
+新增设置项时同步 DEFAULT_CONFIG、STORAGE_KEYS、Settings、validation.ts 的字段校验、UI 和双语文案。
 
-`storage.ts` 的 `isExtension()` 检测 `chrome.storage` 是否存在，决定 `StorageManager` 走 `chrome.storage.local` 还是 `localStorage` 降级实现（接口签名对齐 chrome.storage，全部返回 Promise）。
+## 4 快捷访问与书签
 
-- `vite dev` 网页预览：数据存 `localStorage`；popup 页会显示「非扩展环境」提示，用当前地址模拟标签页。
-- 扩展环境：数据存 `chrome.storage.local`，manifest 声明的权限为 `storage` / `tabs` / `activeTab` / `bookmarks`。
+`QuickAccessItem { id, title, url, icon, addedAt }`：手动条目使用 UUID，编辑 URL 或排序时不改变 ID。旧版缺少 ID 的条目在加锁加载时迁移。所有入口统一校验 HTTP(S) 地址并规范化 URL，手动添加/编辑禁止重复 URL。
 
-**规则：** 所有需要区分环境的代码必须通过 `isExtension()` 判断，不得散落 `typeof chrome` 检查。
+- `quickAccess.add(item)`：传入无 ID 的条目，返回是否新增。
+- `remove(id)` / `updateItem(id, { title, url })` / `reorder(fromId, toId)`：按 ID 定位，不接受旧的数组下标；目标删除后不误操作其他条目。编辑冲突报错，重复 URL 返回 false。
+- `bookmarkDock.load(folderId)`：读取文件夹直接子书签，过滤非 HTTP(S) 链接，ID 使用 `bookmark:${bookmark.id}`，重复 URL 的书签可同时展示；请求序号避免旧文件夹的异步结果覆盖新选择。
+- `bookmarkDock.listFolders()`：返回文件夹路径列表；非扩展环境返回空。
+- 书签在新标签页打开、模式/文件夹变化时重新读取；编辑浏览器书签后可重新打开标签页查看。
+- Dock 使用 `quickAccessPosition` 决定顶部/底部，按域名匹配本地 SVG，未命中回退 favicon。
+- 设置中支持拖拽排序及上移/下移按钮，键盘用户无需依赖拖拽。
 
-## 5 数据层
+## 5 配置导入导出
 
-### 5.1 存储键与默认值
+备份格式维持 `{ version: '1.0', exportTime, exportDate, config }`，兼容原先导出的 1.0 备份。
 
-- 键名统一定义在 `config.ts` 的 `STORAGE_KEYS`（如 `backgroundType`、`quickAccess`、`quoteCache` 等），**禁止**在别处硬编码字符串键。
-- 默认值统一定义在 `config.ts` 的 `DEFAULT_CONFIG`；`StorageManager.initDefaults()` 在 `settings.load()` 时仅补写缺失键。`initDefaults(existing?)` 支持传入调用方已读取的数据以复用，并在补写后返回完整数据，避免启动时对 `chrome.storage` 重复全量读取造成卡顿。
-- 新增设置项时需同步修改：`DEFAULT_CONFIG`、`STORAGE_KEYS`、`SettingsState`（stores.ts）、`settings` store 的 `load()`/`save()` 映射、以及 `SettingsModal` 的 UI（若为语言类配置见第 9 节）。
+`exportBackup()` 在锁内生成已知字段的快照。`validateBackup()` 在写入之前校验版本、普通对象、已知键、字段类型/枚举、数组元素、时间戳、图片来源、URL 协议和重复 ID/URL；未知版本、未知配置键与无效字段均拒绝。导入文件上限 10 MiB，本地图片上限 5 MiB；base64 图片具有相应编码大小限制，单个列表最多 2000 项。
 
-### 5.2 store 契约
+`importBackup(data)` 再次校验后一次 `setMultiple`，缺失设置恢复默认值、缺失列表恢复空列表、缺失一言缓存恢复空缓存。验证失败不写入，Chrome 配额失败不更新界面。新缓存 revision 使导入前发出的网络响应失效。成功后刷新设置与快捷访问；其他页面通过存储事件同步。
 
-| store | 方法 | 说明 |
-| --- | --- | --- |
-| `settings` | `load()` / `save(partial)` | `load` 通过 `initDefaults` 单次全量读取并补写缺失默认值（不重复读取）；`save` 乐观更新内存后整批写存储 |
-| `quickAccess` | `load()` / `add(item)` / `remove(i)` / `updateItem(i, patch)` / `reorder(from, to)` | 以 `url` 去重；所有变更即写存储 |
-| `bookmarkDock` | `load(folderId)` / `listFolders()` | 从 `chrome.bookmarks` 读取指定文件夹的直接子书签组成 Dock（不递归子文件夹）；`listFolders` 返回全部文件夹及其层级路径供选择；非扩展环境返回空 |
-| `quote` | `load()` / `refresh()` / `clearCache()` | 双缓存位 + 使用位标记：界面切换仅改 `active`（到期轮换 / 手动刷新都只切换使用位），网络只填空闲槽且不更新界面；详见 `docs/quote_api.md` |
+## 6 一言
 
-派生 store：`backgroundStyle`（由 settings 派生背景 CSS `url(...)`，渐变模式为空串）。
+采用两个缓存位与 active 使用标记。切换与 shownAt 在本地事务中先保存，网络补充不直接更新展示。网络锁独立于存储锁，请求具有超时、响应校验和 revision 校验，避免并发刷新或清空/导入后的迟到请求覆盖新内容。详见 [一言文档](quote_api.md)。
 
-### 5.3 数据类型
+## 7 MV3 构建与网络
 
-见 `types.ts`：`QuickAccessItem { title, url, icon, addedAt }`、`Hitokoto`（一言 API 响应）、`QuoteCache { initialized, slots[2], active }`（一言双缓存位 + 使用位标记，见 `docs/quote_api.md`）、`BookmarkFolderOption { id, title, path }`、`Settings`。快捷访问数据来源由设置项 `quickAccessMode`（`manual` / `bookmark`）决定：`manual` 读 `quickAccess` store，`bookmark` 读 `bookmarkDock` store；后者通过 `bookmarkFolderId` 指定来源文件夹（默认为空，需在设置面板选择）。
+- `static/manifest.json` 是清单来源；权限为 `storage / activeTab / bookmarks`，host permission 仅包含一言域名。
+- popup 通过用户点击工具栏 action 获得当前标签页的临时访问权，不再申请广泛的 `tabs` 权限；不支持加入浏览器内部页等非 HTTP(S) 地址。
+- 必须使用 `pnpm run build`：Vite 预渲染 `/newtab` 与 `/popup`，随后 patch-manifest.mjs 将 HTML 内联脚本外部化到 `build/app/bootstrap/`，移除 modulepreload，写入 `script-src 'self'; object-src 'self'`。
+- `kit.appDir = 'app'` 避免使用保留目录名 `_app`，`paths.relative = false`；禁止手工修改 build。原生扩展本地化的 `_locales` 是允许的特殊目录，但本项目暂未启用。
+- 运行时脚本与语言包全部本地打包；运行时依赖包含 Svelte 和 svelte-i18n 及其传递依赖。
+- 一言使用 HTTPS JSON API；URL 背景、未命中预置图标的 favicon 会请求相应第三方，搜索提交直接跳转到选定引擎。没有第三方分析或远端上报。
 
-### 5.4 配置导入/导出
+## 8 样式与可访问性
 
-`SettingsModal.handleExport/handleImport`：导出为 `{ version, exportTime, exportDate, config }` JSON；导入校验 `config` 字段后整批 `setMultiple` 并重新 `load()` 两个 store。修改配置格式时需考虑旧导出文件的兼容性。
+使用 app.css 设计令牌、`.glass / .glass-strong`、Tailwind 与 DaisyUI dark。html 深色兜底、body 透明；popup 专属样式通过 `body:has([data-popup])` 放在 app.css。
 
-## 6 MV3 与 CSP（构建链关键点）
+设置使用原生 `dialog.showModal()`：浏览器限制背景交互、圈定焦点并支持 Esc；关闭后恢复打开按钮焦点。保持原毛玻璃样式。复制保护不拦截设置或可编辑内容，不取消 dragstart。项目不再包含自定义光标组件。
 
-SvelteKit 预渲染页面内含客户端挂载所需的内联 `<script>`，而 MV3 禁止 `unsafe-inline`；同时 Chrome 扩展**禁止 `_` 开头的文件/目录名**（系统保留），故产物目录不能用 SvelteKit 默认的 `_app`。因此：
+## 9 国际化
 
-1. `static/manifest.json` 是清单的**唯一事实来源**（不含 CSP 字段）。
-2. `svelte.config.js` 设置 `kit.appDir = 'app'`：客户端 JS/CSS 产物输出到 `build/app/`，HTML 引用 `/app/**` 绝对路径（配合 `paths.relative = false`）。
-3. `pnpm run build` = `vite build` + `node scripts/patch-manifest.mjs`。
-4. `patch-manifest.mjs` 将 `build/` 下所有 `.html` 的内联脚本外部化为 `build/app/bootstrap/*.js`（以 `src` 引用），并在 `build/manifest.json` 写入 `content_security_policy.extension_pages`（`script-src 'self'`）。脚本中的 `APP_DIR` 常量必须与 `kit.appDir` 保持一致。
-5. **任何构建产物问题优先排查此链路**；新增页面路由时需确认 `svelte.config.js` 的 `prerender.entries` 已包含（当前为 `/newtab` 与 `/popup`）。
+所有 UI 文案通过 svelte-i18n `_` 获取，语言包同时维护 zh-CN 与 en-US；组件必须使用 `$_`，不能重命名自动订阅标识。
 
-## 7 外部依赖与网络
+**当前库的插值参数名是 `values`**：`$_('msg.importConfirmWithDate', { values: { time } })`，不得使用 `vars` 或顶层 `{ time }`。
 
-- 唯一外部 API：一言 `https://v1.hitokoto.cn/`（已在 manifest `host_permissions` 声明），类型参数由 `settings.quoteTypes`（`a/b/c/d/i` 等）映射为 `c=` 查询参数。
-- 图标获取：`faviconUrl()` 直接拼接 `{origin}/favicon.ico`；popup 中优先使用 `chrome.tabs` 返回的 `favIconUrl`。快捷访问 Dock 展示时，若设置项 `usePresetIcons`（默认开启）为真，先用 `dockIcons.presetIconFor(url)` 检查是否命中预置域名表，命中则用本地 dashboard-icons SVG 替换 favicon（无网络请求），未命中才回退站点 favicon。`dockIcons.ts` 的映射键为带完整 TLD 的域名（如 `deepseek.com`），匹配规则为「全域名或任意子域」通配（`host === key || host.endsWith('.' + key)`），并按键长度降序优先，使更具体子域（如 `gemini.google.com`）命中专用图标；仅内置在线服务与 Linux 发行版官网，本地自托管软件（浏览器、Docker 等）不内置。
-- 无任何第三方运行时依赖（package.json 中全部为 devDependencies）。
+语言偏好 `browser / zh-CN / en-US`；`resolveLocale()` 将浏览器 `en` 和全部 `en-*` 归一到 en-US，其他语言回退 zh-CN。固定语言直接使用。设置及 popup 均加载持久化偏好；模块订阅仅在实际语言变化时更新 locale，布局同步 html lang。一言缺省内容由翻译 store 派生，切换语言即时更新。
 
-## 8 样式体系
-
-- 设计令牌（颜色/背景/强调色）定义在 `app.css` 的 `:root`。
-- 毛玻璃：`.glass`（blur 10px）与 `.glass-strong`（blur 24px）为 `@layer components` 工具类。
-- `body` 保持透明、深色兜底放在 `html` 上——避免不透明背景盖住 `fixed -z-10` 的背景图层。改动背景层时必须保留此结构。
-- 自定义光标 `#snow-cursor` 使用 `mix-blend-mode: difference`，样式在 `app.css`，逻辑在 `Cursor.svelte`。
-
-## 9 国际化（i18n）
-
-TSTab 使用 **`svelte-i18n`**（主流 SvelteKit 客户端国际化方案）实现多语言，而非自研方案。所有界面文案通过 `$_('key')` 按当前语言响应式输出，语言切换即时生效、无需刷新。
-
-### 9.1 模块与目录
-
-- `src/lib/i18n/index.js`：初始化入口，模块加载即执行——注册语言包（`addMessages`）、调用 `init({ fallbackLocale: 'zh-CN' })`，并与 `settings` store 的 `locale` 偏好做双向同步。
-- `src/lib/i18n/locales/zh-CN.json` / `en-US.json`：两套平行的语言包（默认中文，`zh-CN` 兼作 fallback）。键采用点分（如 `settings.title`）、`{var}` 插值。
-- `src/routes/+layout.svelte`：`import '$lib/i18n'`（副作用初始化）+ 订阅 svelte-i18n 的 `locale` 以动态写入 `<html lang>`。
-
-### 9.2 语言偏好与解析
-
-- 设置项 `settings.locale`（存储键 `locale`）取值：`'browser'`（默认，跟随浏览器）| `'zh-CN'` | `'en-US'`。
-- `resolveLocale(pref)` 负责解析：固定语言直接返回；`browser`/空值回退到 `getLocaleFromNavigator()`，非浏览器环境回退 `zh-CN`。
-- `settings.save({ locale });` 触发 store 更新 → i18n 订阅自动 `locale.set(...)`，全站文案与 `<html lang>` 随之切换。
-
-### 9.3 使用规范（LLM 与开发者必须遵守）
-
-1. **禁止硬编码用户可感知的中文文案**。所有出现在 UI 的字符串（含 `title`/`aria-label`/`placeholder`/`alert`/`confirm` 文本）一律通过 `$_('key')` 读取；JS 函数内的提示用 `$_('msg.xxx', { vars })` 插值。
-2. **新增/修改文案必须同步两份语言包**：先在 `zh-CN.json` 增加 key，再在 `en-US.json` 补全对应英文，保证键名与层级一致；缺失时会在运行时回退 `zh-CN`，但文档规范要求始终补齐。
-3. **组件内使用**：模板与脚本统一 `import { _ } from 'svelte-i18n'` 后用 `$_('key')`。注意 `$_` 是 Svelte 自动订阅语法，仅对字面命名为 `_` 的 store 生效，**禁止改名为 `_t` 等别名**。
-4. **语言相关逻辑放在 `i18n/index.js`**；`stores.ts` 中需要取文案处（如一言的兜底文案 / loading）用 `get(_)('key')`（`_` 是 function store）。
-5. **命名空间**：顶级按模块分组 `engine / search / quote / newtab / common / settings / msg / popup / qaDock`；`msg.*` 专放 `alert`/`confirm` 等脚本提示，`settings.*` 放设置面板，`popup.*` 放工具栏弹窗。
-6. **manifest 与品牌**：`static/manifest.json` 的 `name`/`description` 为静态品牌文案（`_locales` 未启用），暂不随语言设置切换，正文界面不依赖此处。
-
-### 9.4 注意事项
-
-- `_` 目录限制：`svelte-i18n` 运行时依赖 `intl-messageformat` / `es5-ext`（已加入 `pnpm-workspace.yaml` 的 `allowBuilds`）。语言包为 JSON 静态资源，经 Vite 打包进客户端 chunk，无额外网络请求。
-- 预渲染：页面在服务端以 `initialLocale: 'zh-CN'` 预渲染，客户端 hydration 后按偏好切换到正确语言（跟随浏览器或固定语言），符合扩展的无路由、运行时切换场景。
+manifest 品牌文案仍为静态中文；扩展界面的两套语言包不等同于商店原生本地化。

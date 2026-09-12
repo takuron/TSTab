@@ -1,175 +1,138 @@
-import { DEFAULT_CONFIG, STORAGE_KEYS } from './config';
+import { DEFAULT_CONFIG } from './config';
 
 /**
- * 是否运行在浏览器扩展环境中（存在 chrome.storage）。
- * 在浏览器开发调试（vite dev）时回退到 localStorage。
+ * 检测 Chrome/Edge 扩展环境。
+ * @returns 是否支持扩展本地存储
  */
 export function isExtension(): boolean {
-	return typeof chrome !== 'undefined' && !!chrome.storage && !!chrome.storage.local;
+	return typeof chrome !== 'undefined' && !!chrome.storage?.local;
 }
 
-interface ChromeStorageArea {
-	get(keys: string[] | null, cb: (items: Record<string, unknown>) => void): void;
-	set(items: Record<string, unknown>, cb?: () => void): void;
-	remove(keys: string[], cb?: () => void): void;
-	clear(cb?: () => void): void;
+function chromeCall<T>(invoke: (done: (value: T) => void) => void): Promise<T> {
+	return new Promise((resolve, reject) => invoke((value) => {
+		const error = chrome.runtime.lastError;
+		if (error) reject(new Error(error.message));
+		else resolve(value);
+	}));
 }
 
-function getArea(): ChromeStorageArea | null {
-	if (isExtension()) return chrome.storage.local;
-	return null;
+// 开发环境用单个快照保存全部数据，确保一次写入失败时原配置不受影响。
+const LOCAL_KEY = 'tstab:local';
+function readLocal(): Record<string, unknown> {
+	const snapshot = localStorage.getItem(LOCAL_KEY);
+	if (snapshot) return JSON.parse(snapshot);
+	// 兼容旧版开发环境的逐键存储。
+	const all: Record<string, unknown> = {};
+	for (let i = 0; i < localStorage.length; i++) {
+		const key = localStorage.key(i)!;
+		try { all[key] = JSON.parse(localStorage.getItem(key)!); } catch { /* 忽略非 JSON 旧值。 */ }
+	}
+	return all;
 }
 
-/**
- * 在非扩展环境下用 localStorage 实现兼容的异步存储。
- * 键值全部 JSON 序列化。
- */
-const localFallback = {
-	async get(keys: string[] | null): Promise<Record<string, unknown>> {
-		const result: Record<string, unknown> = {};
-		if (keys === null) {
-			for (let i = 0; i < localStorage.length; i++) {
-				const key = localStorage.key(i)!;
-				result[key] = parse(localStorage.getItem(key));
-			}
-		} else {
-			for (const key of keys) {
-				result[key] = parse(localStorage.getItem(key));
-			}
+const localListeners = new Set<(keys: string[]) => void>();
+const area = {
+	async getAll(): Promise<Record<string, unknown>> {
+		return isExtension() ? chromeCall((done) => chrome.storage.local.get(null, done)) : readLocal();
+	},
+	async get(key: string): Promise<unknown> {
+		if (!isExtension()) return readLocal()[key];
+		const values = await chromeCall<Record<string, unknown>>((done) => chrome.storage.local.get([key], done));
+		return values[key];
+	},
+	async setMultiple(items: Record<string, unknown>): Promise<void> {
+		if (isExtension()) await chromeCall<void>((done) => chrome.storage.local.set(items, done));
+		else {
+			localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...readLocal(), ...items }));
+			localListeners.forEach((listener) => listener(Object.keys(items)));
 		}
-		return result;
 	},
-	async set(items: Record<string, unknown>): Promise<void> {
-		for (const [key, value] of Object.entries(items)) {
-			localStorage.setItem(key, JSON.stringify(value));
+	async set(key: string, value: unknown): Promise<void> {
+		await area.setMultiple({ [key]: value });
+	},
+	async removeMultiple(keys: string[]): Promise<void> {
+		if (isExtension()) await chromeCall<void>((done) => chrome.storage.local.remove(keys, done));
+		else {
+			const all = readLocal();
+			keys.forEach((key) => delete all[key]);
+			localStorage.setItem(LOCAL_KEY, JSON.stringify(all));
+			localListeners.forEach((listener) => listener(keys));
 		}
-	},
-	async remove(keys: string[]): Promise<void> {
-		for (const key of keys) localStorage.removeItem(key);
-	},
-	async clear(): Promise<void> {
-		localStorage.clear();
 	}
 };
 
-function parse(raw: string | null): unknown {
-	if (raw === null) return undefined;
-	try {
-		return JSON.parse(raw);
-	} catch {
-		return raw;
-	}
+/**
+ * 跨页面串行访问存储。回调内只能使用传入的存储接口，不能嵌套事务。
+ * @param action 锁内读取、修改和提交操作；禁止等待网络
+ * @returns 操作结果，存储失败时拒绝
+ */
+async function transaction<T>(action: (storage: typeof area) => Promise<T>): Promise<T> {
+	// Chrome/Edge MV3 与 localhost 均支持 Web Locks；不支持时拒绝写入，避免静默丢数据。
+	return await navigator.locks.request('tstab:storage', () => action(area));
 }
 
+/** 本地存储入口；所有写操作使用同一跨页面锁，Chrome 错误原样传播。 */
 export const StorageManager = {
-	async get(key: string): Promise<unknown> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) =>
-				area.get([key], (r) => resolve(r[key] ?? undefined))
-			);
-		}
-		return localFallback.get([key]).then((r) => r[key]);
-	},
-
+	/** 跨页面读取、修改和提交；回调接收未重复加锁的存储接口。 */
+	transaction,
+	/** @returns 全部存储数据 */
+	getAll: area.getAll,
+	/** @param key 存储键 @returns 对应值 */
+	get: area.get,
+	/** @param keys 存储键列表 @returns 对应键值 */
 	async getMultiple(keys: string[]): Promise<Record<string, unknown>> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.get(keys, (r) => resolve(r)));
-		}
-		return localFallback.get(keys);
+		const all = await area.getAll();
+		return Object.fromEntries(keys.map((key) => [key, all[key]]));
 	},
-
-	async getAll(): Promise<Record<string, unknown>> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.get(null, (r) => resolve(r)));
-		}
-		return localFallback.get(null);
+	/** @param key 存储键 @param value 新值 @returns 写入完成 */
+	set(key: string, value: unknown): Promise<void> {
+		return transaction((storage) => storage.set(key, value));
 	},
-
-	async set(key: string, value: unknown): Promise<void> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.set({ [key]: value }, resolve));
-		}
-		return localFallback.set({ [key]: value });
+	/** @param items 一批键值 @returns 整批写入完成 */
+	setMultiple(items: Record<string, unknown>): Promise<void> {
+		return transaction((storage) => storage.setMultiple(items));
 	},
-
-	async setMultiple(items: Record<string, unknown>): Promise<void> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.set(items, resolve));
-		}
-		return localFallback.set(items);
+	/** @param key 存储键 @returns 删除完成 */
+	remove(key: string): Promise<void> {
+		return transaction((storage) => storage.removeMultiple([key]));
 	},
-
-	async remove(key: string): Promise<void> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.remove([key], resolve));
-		}
-		return localFallback.remove([key]);
+	/** @param keys 存储键列表 @returns 删除完成 */
+	removeMultiple(keys: string[]): Promise<void> {
+		return transaction((storage) => storage.removeMultiple(keys));
 	},
-
-	async removeMultiple(keys: string[]): Promise<void> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.remove(keys, resolve));
-		}
-		return localFallback.remove(keys);
+	/** @returns 清空完成 */
+	clear(): Promise<void> {
+		return transaction(async (storage) => storage.removeMultiple(Object.keys(await storage.getAll())));
 	},
-
-	async clear(): Promise<void> {
-		const area = getArea();
-		if (area) {
-			return new Promise((resolve) => area.clear(resolve));
-		}
-		return localFallback.clear();
+	/** @param key 存储键 @param fallback 缺失时的默认值 @returns 存储值或默认值 */
+	async getWithDefault<T>(key: string, fallback: T): Promise<T> {
+		return (await area.get(key) as T | undefined) ?? fallback;
 	},
-
-	async getWithDefault<T>(key: string, defaultValue: T): Promise<T> {
-		const value = await this.get(key);
-		return value !== undefined && value !== null ? (value as T) : defaultValue;
+	/** 在锁内补写缺失默认值。@returns 补齐后的完整配置 */
+	initDefaults(): Promise<Record<string, unknown>> {
+		return transaction(async (storage) => {
+			const all = await storage.getAll();
+			const missing = Object.fromEntries(Object.entries(DEFAULT_CONFIG).filter(([key]) => all[key] === undefined));
+			if (Object.keys(missing).length) await storage.setMultiple(missing);
+			return { ...all, ...missing };
+		});
 	},
-
 	/**
-	 * 首次运行时写入默认配置（仅写入缺失项）。
-	 * 传入已读取的全量数据可复用，避免启动时对 chrome.storage 重复全量读取造成卡顿；
-	 * 返回补写默认值后的完整存储数据，供调用方直接使用。
-	 *
-	 * @param existing 可选，调用方已读取的存储数据；传入后本次内部不再读取
-	 * @returns 补写默认值后的完整存储数据
+	 * 监听当前页面及其他页面的存储变化。
+	 * @param listener 接收已变化的键；空数组表示全部重新加载
+	 * @returns 清理监听的函数
 	 */
-	async initDefaults(existing?: Record<string, unknown>): Promise<Record<string, unknown>> {
-		const all = existing ?? (await this.getAll());
-		if (Object.keys(all).length === 0) {
-			// 首次运行：整批写入默认值以尽早填充，避免逐个键导致多次写。
-			await this.setMultiple(DEFAULT_CONFIG as Record<string, unknown>);
-			return all;
+	subscribe(listener: (keys: string[]) => void): () => void {
+		if (isExtension()) {
+			const handler = (changes: Record<string, chrome.storage.StorageChange>, name: string) => {
+				if (name === 'local') listener(Object.keys(changes));
+			};
+			chrome.storage.onChanged.addListener(handler);
+			return () => chrome.storage.onChanged.removeListener(handler);
 		}
-		const configKeyMap: Record<keyof typeof DEFAULT_CONFIG, string> = {
-			backgroundType: STORAGE_KEYS.BACKGROUND_TYPE,
-			backgroundImage: STORAGE_KEYS.BACKGROUND_IMAGE,
-			searchEngine: STORAGE_KEYS.SEARCH_ENGINE,
-			quoteEnabled: STORAGE_KEYS.QUOTE_ENABLED,
-			quoteTypes: STORAGE_KEYS.QUOTE_TYPES,
-			copyProtection: STORAGE_KEYS.COPY_PROTECTION,
-			quickAccessPosition: STORAGE_KEYS.QUICK_ACCESS_POSITION,
-			quickAccessMode: STORAGE_KEYS.QUICK_ACCESS_MODE,
-			bookmarkFolderId: STORAGE_KEYS.BOOKMARK_FOLDER_ID,
-			usePresetIcons: STORAGE_KEYS.USE_PRESET_ICONS,
-			locale: STORAGE_KEYS.LOCALE
-		};
-		const updates: Record<string, unknown> = {};
-		for (const key of Object.keys(DEFAULT_CONFIG) as (keyof typeof DEFAULT_CONFIG)[]) {
-			const storageKey = configKeyMap[key];
-			if (all[storageKey] === undefined) updates[storageKey] = DEFAULT_CONFIG[key];
-		}
-		if (Object.keys(updates).length) {
-			await this.setMultiple(updates);
-			return { ...all, ...updates };
-		}
-		return all;
+		const handler = (event: StorageEvent) => { if (event.key === LOCAL_KEY || event.key === null) listener([]); };
+		window.addEventListener('storage', handler);
+		localListeners.add(listener);
+		return () => { window.removeEventListener('storage', handler); localListeners.delete(listener); };
 	}
 };

@@ -13,6 +13,7 @@ pnpm install        # 安装依赖
 pnpm run dev        # 本地开发（网页预览）
 pnpm run build      # 构建浏览器扩展产物到 build/
 pnpm run preview    # 预览构建产物
+pnpm run test       # 运行代码审计回归测试
 pnpm run check      # svelte-check 类型检查（每次编码任务后必须通过）
 ```
 
@@ -49,3 +50,9 @@ pnpm run build
 - 修改代码后需重新 `pnpm run build` 并在扩展管理页点击「重新加载」才能生效。
 - newtab 页面可通过右键「检查」打开 DevTools；popup 可在弹窗上右键「检查」。
 - 存储数据可在 DevTools Console 中通过 `chrome.storage.local.get(null, console.log)` 查看。
+
+## 7 发布前回归
+
+运行 `pnpm run test`、`pnpm run check` 与 `pnpm run build`。回归测试使用独立 store 上下文和共享锁/存储模拟，并验证实际 svelte-i18n 插值。浏览器验收应加载最终 build，覆盖多页面保存、popup 固定语言、导入失败、离线一言、重复书签和设置 dialog 的 Tab/Esc/焦点恢复。开发模式须使用 localhost 或 HTTPS，保证 Web Locks 可用。
+
+可执行的 Chromium 冒烟测试：先 `pnpm run build`，再运行 `pnpm run test:browser`。需要系统安装 Chromium（可用 `CHROMIUM_PATH` 指定可执行文件）以及本机调试端口访问权限。脚本自行创建临时浏览器配置并在结束后删除，只操作其中的测试书签与存储，不连接日常使用的浏览器。涵盖原生 dialog 的 Tab/Esc/焦点、跨页面保存、复制/拖拽、键盘排序、重复书签、popup 语言与真实存储配额错误后的控件回退。

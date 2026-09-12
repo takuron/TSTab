@@ -7,7 +7,7 @@
 - 端点：`https://v1.hitokoto.cn/`
 - 方法：`GET`
 - 无鉴权，任何来源可访问。
-- 已在 `static/manifest.json` 的 `host_permissions` 中声明 `https://v1.hitokoto.cn/*`（扩展环境必须，否则会被 CSP 拦截）。
+- 已在 `static/manifest.json` 的 `host_permissions` 中声明 `https://v1.hitokoto.cn/*`（用于扩展页跨域请求授权，与脚本 CSP 分别生效）。
 
 ### 1.1 请求参数
 
@@ -58,8 +58,8 @@ interface Hitokoto {
 `quote` store 的 `fetchQuote()`（`stores.ts`）将设置项 `settings.quoteTypes` 映射为多个 `c` 参数后请求：
 
 ```ts
-const typeParams = $s.quoteTypes.map((t) => `c=${t}`).join('&');
-const res = await fetch(`${HITOKOTO_API}?${typeParams}`);
+const params = new URLSearchParams(types.map((type) => ['c', type]));
+const res = await fetch(`${HITOKOTO_API}?${params}`, { signal: controller.signal, credentials: 'omit' });
 ```
 
 注意分类参数用**重复的 `c=`** 而非逗号。
@@ -68,8 +68,8 @@ const res = await fetch(`${HITOKOTO_API}?${typeParams}`);
 
 一言采用「两个缓存位 + 一个正在使用位下标」的结构（数据存于 `STORAGE_KEYS.QUOTE_CACHE`，即 `quoteCache`），把「界面切换显示」与「网络拉取」彻底解耦：
 
-- **界面显示**：始终读取并展示当前 `active` 位的内容，任何切换显示的动作（到期轮换、手动刷新）都只改动 `active` 下标，**不发起网络请求**。
-- **网络拉取**：只填充「空闲槽」（非 active 的那一位），填完后不直接更新界面，等待下次轮换或刷新时切换过去。保证了界面更新从不因网络而卡顿、离线时界面照常切换。
+- **界面显示**：始终读取并展示当前 `active` 位的内容，切换显示先在本地事务中更新 `active`、`shownAt` 及空闲槽，完成持久化后显示；随后独立调度网络补充，不等待网络。
+- **网络拉取**：只填充「空闲槽」（非 active 的那一位），填完后不直接更新界面，等待下次轮换或刷新时切换过去。界面不等待网络；离线且空闲槽为空时保留当前内容。首次初始化允许填充两个空槽，但不改变当前显示的缺省文案。
 
 ### 3.1 数据结构（`types.ts`）
 
@@ -84,16 +84,17 @@ interface QuoteCache {
 	initialized: boolean;            // 是否已完成首次初始化
 	slots: [QuoteSlot, QuoteSlot];  // 两个缓存位，下标 0 / 1
 	active: 0 | 1;                  // 当前正在使用的位下标
+	revision?: string;              // 切换/重置时更新，隔离迟到请求
 }
 ```
 
-> 过期判断基准：以**该槽位开始展示以来的时长**（`shownAt`，即切换到 active 的时刻）而非请求/写入时刻（`timestamp`）为准。这样保证每个槽位都展示满 `CACHE_EXPIRY` 时长后才轮换，而不是「请求后到了一定时间就过期」——因为槽位可能提前拉取、到轮换时才真正展示。
+> 过期判断基准：以**该槽位开始展示以来的时长**（`shownAt`，即首次展示或切换到 active 的时刻）而非请求/写入时刻（`timestamp`）为准。这样保证每个槽位都展示满 `CACHE_EXPIRY` 时长后才轮换，而不是「请求后到了一定时间就过期」——因为槽位可能提前拉取、到轮换时才真正展示。
 
 ### 3.2 首次打开
 
 1. 无有效缓存（`initialized` 为假）。
 2. **立即展示本地缺省一言**（`quote.fallbackText`），不等网络。
-3. 并行拉取**两条不同**一言（`fetchTwoDistinct`，按 `uuid` 去重重试）。
+3. 在独立网络锁内并行拉取**两条不同**一言（`fetchTwoDistinct`，按正文去重、最多重试 3 次；始终重复时保留响应，避免无限请求）。
 4. 存储：第一条 → `slots[0]`，第二条 → `slots[1]`，`active = 0`。
 
 ### 3.3 每次打开（`load`）——自动轮换
@@ -124,7 +125,15 @@ interface QuoteCache {
 
 > 说明：轮换只在当前 active 位超过 `CACHE_EXPIRY` 时发生；每次轮换仅改 `active` 下标，从另一个缓存槽读取，不再直接请求 API。网络只负责把空闲槽填满，绝不直接更新界面。
 
-## 5 修改一致性检查
+## 5 并发、离线与错误处理
+
+- 本地切换使用 `tstab:storage` 锁，先保存 active、shownAt 和空闲槽；fetch 失败也不会退回旧使用位。首次真正展示时才写 shownAt，不用提前下载时间计算展示时长。
+- `tstab:quote-network` 独立同源锁采用 `ifAvailable`，一个页面已在补充时其他页面不重复请求；不会占用存储锁等待网络。
+- 每次 fetch 超时为 8 秒，使用 AbortController，失败保留本地内容并释放网络锁。响应正文、出处、作者和 uuid 在入库前校验。
+- 切换、清空、导入均改变 revision；网络返回后在存储锁内重读最新数据，只有 revision 与分类仍一致且一言仍开启时才写入。清空写入带新 revision 的空缓存，使在途响应失效。
+- 空闲槽补充成功不直接更新页面；下一次刷新或打开时展示。清空缓存立即回到当前语言的本地缺省文案。
+
+## 6 修改一致性检查
 
 - 修改数据结构时需同步：`types.ts` 的 `QuoteCache`、`stores.ts` 的创建/更新逻辑、`docs/architecture.md` 第 5.2/5.3 节、`docs/quote_api.md`。
 - 新增「缓存预留」相关设置项时遵循 `llm_readme.md` 3.1 文档同步规则与 `docs/architecture.md` 5.1 节。

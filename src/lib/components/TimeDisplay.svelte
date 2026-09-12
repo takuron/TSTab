@@ -1,10 +1,9 @@
 <script>
+	// 展示本地时间与当前语言的日期，每秒刷新。
 	import { onDestroy, onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { locale } from 'svelte-i18n';
 
-	// 中文星期名（仅当语言为 zh-CN 时使用）
-	const ZH_WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
 
 	let time = '';
 	let date = '';
@@ -17,19 +16,10 @@
 		const mm = String(now.getMinutes()).padStart(2, '0');
 		time = `${hh}:${mm}`;
 
-		// 按当前语言格式化日期：英文用 Intl，中文保持“年月日 星期X”格式
-		if (get(locale) === 'en-US') {
-			date = now.toLocaleDateString('en-US', {
-				weekday: 'long',
-				year: 'numeric',
-				month: 'long',
-				day: 'numeric'
-			});
-		} else {
-			date = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${
-				ZH_WEEKDAYS[now.getDay()]
-			}`;
-		}
+		// 日期交给浏览器国际化格式器，避免硬编码中文日期和星期。
+		date = now.toLocaleDateString(get(locale) === 'en-US' ? 'en-US' : 'zh-CN', {
+			weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+		});
 	}
 
 	onMount(() => {

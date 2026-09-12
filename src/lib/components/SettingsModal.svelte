@@ -1,12 +1,16 @@
 <script>
+	// 设置面板：编辑、导入导出及无障碍对话框交互。
 	import { _ } from 'svelte-i18n';
-	import { MAX_IMAGE_SIZE } from '$lib/config';
+	import { persistedControl } from '$lib/controls';
+	import { DEFAULT_CONFIG, MAX_IMAGE_SIZE, SEARCH_ENGINES } from '$lib/config';
 	import { SUPPORTED_LOCALES } from '$lib/i18n';
 	import { LICENSE_GROUPS, PROJECT_URL } from '$lib/licenses';
-	import { isExtension, StorageManager } from '$lib/storage';
-	import { bookmarkDock, faviconUrl, quickAccess, quote, settings } from '$lib/stores';
+	import { isExtension } from '$lib/storage';
+	import { webUrlOrNull } from '$lib/search';
+	import { MAX_BACKUP_SIZE, validateBackup } from '$lib/validation';
+	import { bookmarkDock, exportBackup, importBackup, faviconUrl, operationError, quickAccess, quote, runAction, settings } from '$lib/stores';
 
-	export let open = false;
+	export let open = false; // 是否显示设置，默认关闭。
 
 	// 一言类型：value 为 hitokoto 的类型参数，key 指向对应翻译键
 	const QUOTE_TYPES = [
@@ -22,16 +26,16 @@
 	let importInput;
 	let qaTitle = '';
 	let qaUrl = '';
-	let draggingIndex = null;
-	let dragOverIndex = null;
-	let editingIndex = null;
+	let draggingId = null;
+	let dragOverId = null;
+	let editingId = null;
 	let editTitle = '';
 	let editUrl = '';
 	let bookmarkFolders = [];
 
 	// 打开设置面板且为书签模式时，加载书签文件夹列表供选择。
 	$: if (open && $settings.quickAccessMode === 'bookmark') {
-		loadBookmarkFolders();
+		runAction(loadBookmarkFolders);
 	}
 
 	async function loadBookmarkFolders() {
@@ -50,6 +54,23 @@
 		await settings.save({ quickAccessMode: mode });
 	}
 
+	function modal(node) {
+		const previous = document.activeElement;
+		node.showModal();
+		const onBackdrop = (event) => {
+			const rect = node.getBoundingClientRect();
+			if (event.target === node && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) close();
+		};
+		node.addEventListener('click', onBackdrop);
+		return { destroy() {
+			node.removeEventListener('click', onBackdrop);
+			node.close();
+			if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+		} };
+	}
+
+	function saveSettings(partial) { return runAction(() => settings.save(partial)); }
+
 	function close() {
 		open = false;
 	}
@@ -59,33 +80,26 @@
 	}
 
 	function setLocale(value) {
-		settings.save({ locale: value });
+		saveSettings({ locale: value });
 	}
 
 	/* ---------- 背景 ---------- */
 	function setBgType(type) {
-	// 默认图片模式需带上内置图片路径
-	if (type === 'preset') {
-		settings.save({ backgroundType: 'preset', backgroundImage: 'images/kevin-jiner-g-6gKgRC30k-unsplash.jpg' });
-	} else {
-			settings.save({ backgroundType: type });
-		}
+		// 默认图片模式同时恢复内置图片路径。
+		if (type === 'preset') saveSettings({ backgroundType: 'preset', backgroundImage: DEFAULT_CONFIG.backgroundImage });
+		else saveSettings({ backgroundType: type });
 	}
 
 	async function handleUrlApply() {
 		const url = bgUrlInput.trim();
 		if (!url) return alertMsg($_('msg.bgUrlEmpty'));
-		try {
-			new URL(url);
-		} catch {
-			return alertMsg($_('msg.bgUrlInvalid'));
-		}
+		if (!webUrlOrNull(url)) return alertMsg($_('msg.bgUrlInvalid'));
 		const img = new Image();
-		img.onload = async () => {
+		img.onload = () => runAction(async () => {
 			await settings.save({ backgroundType: 'url', backgroundImage: url });
 			alertMsg($_('msg.bgUrlDone'));
 			bgUrlInput = '';
-		};
+		});
 		img.onerror = () => alertMsg($_('msg.bgUrlFailed'));
 		img.src = url;
 	}
@@ -96,11 +110,12 @@
 		if (!file.type.startsWith('image/')) return alertMsg($_('msg.bgFileType'));
 		if (file.size > MAX_IMAGE_SIZE) return alertMsg($_('msg.bgFileSize'));
 		const reader = new FileReader();
-		reader.onload = async (e) => {
+		reader.onload = (e) => runAction(async () => {
 			await settings.save({ backgroundType: 'local', backgroundImage: e.target.result });
 			alertMsg($_('msg.bgLocalDone'));
 			event.target.value = '';
-		};
+		});
+		reader.onerror = () => alertMsg($_('msg.bgFileReadFailed'));
 		reader.readAsDataURL(file);
 	}
 
@@ -116,11 +131,7 @@
 		const url = qaUrl.trim();
 		if (!title) return alertMsg($_('msg.qaNameEmpty'));
 		if (!url) return alertMsg($_('msg.qaUrlEmpty'));
-		try {
-			new URL(url);
-		} catch {
-			return alertMsg($_('msg.qaUrlInvalid'));
-		}
+		if (!webUrlOrNull(url)) return alertMsg($_('msg.qaUrlInvalid'));
 		const ok = await quickAccess.add({ title, url, icon: faviconUrl(url), addedAt: Date.now() });
 		if (ok) {
 			qaTitle = '';
@@ -130,46 +141,37 @@
 		}
 	}
 
-	async function handleRemoveQa(index) {
+	async function handleRemoveQa(id) {
 		if (!window.confirm($_('msg.qaRemoveConfirm'))) return;
-		await quickAccess.remove(index);
+		await quickAccess.remove(id);
 	}
 
-	function startEdit(index) {
-		editingIndex = index;
-		editTitle = $quickAccess[index]?.title ?? '';
-		editUrl = $quickAccess[index]?.url ?? '';
+	function startEdit(item) {
+		editingId = item.id;
+		editTitle = item.title;
+		editUrl = item.url;
 	}
 
-	async function saveEdit(index) {
+	async function saveEdit(id) {
 		if (!editTitle.trim()) return alertMsg($_('msg.qaNameEmpty'));
 		if (!editUrl.trim()) return alertMsg($_('msg.qaUrlEmpty'));
-		try {
-			new URL(editUrl);
-		} catch {
-			return alertMsg($_('msg.qaUrlInvalid'));
-		}
-		await quickAccess.updateItem(index, { title: editTitle.trim(), url: editUrl.trim() });
-		editingIndex = null;
+		if (!webUrlOrNull(editUrl.trim())) return alertMsg($_('msg.qaUrlInvalid'));
+		const ok = await quickAccess.updateItem(id, { title: editTitle.trim(), url: editUrl.trim() });
+		if (!ok) return alertMsg($_('msg.qaExists'));
+		editingId = null;
 	}
 
-	async function handleDrop(toIndex) {
-		if (draggingIndex !== null && draggingIndex !== toIndex) {
-			await quickAccess.reorder(draggingIndex, toIndex);
+	async function handleDrop(toId) {
+		if (draggingId !== null && draggingId !== toId) {
+			await quickAccess.reorder(draggingId, toId);
 		}
-		draggingIndex = null;
-		dragOverIndex = null;
+		draggingId = null;
+		dragOverId = null;
 	}
 
 	/* ---------- 配置导出 / 导入 ---------- */
 	async function handleExport() {
-		const allConfig = await StorageManager.getAll();
-		const exportData = {
-			version: '1.0',
-			exportTime: new Date().toISOString(),
-			exportDate: new Date().toLocaleString('zh-CN'),
-			config: allConfig
-		};
+		const exportData = await exportBackup();
 		const blob = new Blob([JSON.stringify(exportData, null, 2)], {
 			type: 'application/json'
 		});
@@ -187,26 +189,26 @@
 	async function handleImport(event) {
 		const file = event.target.files?.[0];
 		if (!file) return;
-		if (!file.name.endsWith('.json')) {
+		if (file.size > MAX_BACKUP_SIZE) {
+			event.target.value = '';
+			return alertMsg($_('msg.importTooLarge'));
+		}
+		if (!file.name.toLowerCase().endsWith('.json')) {
 			event.target.value = '';
 			return alertMsg($_('msg.importFileType'));
 		}
 		try {
 			const text = await file.text();
 			const data = JSON.parse(text);
-			if (!data.config || typeof data.config !== 'object') {
-				return alertMsg($_('msg.importInvalid'));
-			}
+			validateBackup(data);
 			const confirmMsg = data.exportDate
-				? $_('msg.importConfirmWithDate', { time: data.exportDate })
+				? $_('msg.importConfirmWithDate', { values: { time: data.exportDate } })
 				: $_('msg.importConfirm');
 			if (!window.confirm(confirmMsg)) {
 				event.target.value = '';
 				return;
 			}
-			await StorageManager.setMultiple(data.config);
-			await settings.load();
-			await quickAccess.load();
+			await importBackup(data);
 			alertMsg($_('msg.importDone'));
 			close();
 		} catch (err) {
@@ -218,15 +220,12 @@
 </script>
 
 {#if open}
-	<div
-		class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-xl p-4"
-		onclick={(e) => (e.target === e.currentTarget ? close() : null)}
+	<dialog use:modal onclose={close} oncancel={close}
+		aria-label={$_('settings.dialogAria')}
+		class="m-auto p-0 w-[calc(100%-2rem)] max-w-[600px] max-h-[86vh] overflow-hidden border-0 bg-transparent text-white backdrop:bg-black/50 backdrop:backdrop-blur-xl"
 	>
 		<div
 			class="flex flex-col w-full max-w-[600px] max-h-[86vh] glass-strong rounded-xl border border-white/15 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] animate-[slide-in_0.3s_ease-out]"
-			role="dialog"
-			aria-modal="true"
-			aria-label={$_('settings.dialogAria')}
 		>
 			<!-- 头部 -->
 			<div class="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-white/5 shrink-0">
@@ -243,6 +242,12 @@
 				</button>
 			</div>
 
+			{#if $operationError}
+				<div role="alert" class="px-8 py-3 bg-red-950/70 text-white flex gap-3 items-center">
+					<span>{$_($operationError)}</span>
+					<button type="button" class="btn btn-xs" onclick={() => operationError.set('')}>{$_('common.dismiss')}</button>
+				</div>
+			{/if}
 			<!-- 内容 -->
 			<div class="flex-1 overflow-y-auto px-8 py-8">
 				<!-- 搜索与语言（首个设置项） -->
@@ -253,19 +258,21 @@
 							<span class="text-sm text-white/80">{$_('settings.searchEngineLabel')}</span>
 							<select
 								class="select select-sm select-bordered bg-black text-white"
-								value={$settings.searchEngine}
-								onchange={(e) => settings.save({ searchEngine: e.currentTarget.value })}
+								aria-label={$_('settings.searchEngineLabel')}
+								use:persistedControl={{ value: $settings.searchEngine }} value={$settings.searchEngine}
+								onchange={(e) => saveSettings({ searchEngine: e.currentTarget.value })}
 							>
-								<option value="baidu">{$_('engine.baidu')}</option>
-								<option value="google">{$_('engine.google')}</option>
-								<option value="bing">{$_('engine.bing')}</option>
+								{#each Object.keys(SEARCH_ENGINES) as value}
+									<option value={value}>{$_('engine.' + value)}</option>
+								{/each}
 							</select>
 						</div>
 						<div class="flex items-center justify-between">
 							<span class="text-sm text-white/80">{$_('settings.language')}</span>
 							<select
 								class="select select-sm select-bordered bg-black text-white"
-								value={$settings.locale ?? 'browser'}
+								aria-label={$_('settings.language')}
+								use:persistedControl={{ value: $settings.locale ?? 'browser' }} value={$settings.locale ?? 'browser'}
 								onchange={(e) => setLocale(e.currentTarget.value)}
 							>
 								<option value="browser">{$_('settings.languageBrowser')}</option>
@@ -285,19 +292,19 @@
 						<span class="block text-sm text-white/80 mb-2">{$_('settings.bgType')}</span>
 						<div class="flex flex-wrap gap-4">
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="bgtype" value="gradient" checked={$settings.backgroundType === 'gradient'} onchange={() => setBgType('gradient')} />
+								<input type="radio" class="radio radio-primary" name="bgtype" value="gradient" use:persistedControl={{ checked: $settings.backgroundType === 'gradient' }} checked={$settings.backgroundType === 'gradient'} onchange={() => setBgType('gradient')} />
 								{$_('settings.bgGradient')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="bgtype" value="preset" checked={$settings.backgroundType === 'preset'} onchange={() => setBgType('preset')} />
+								<input type="radio" class="radio radio-primary" name="bgtype" value="preset" use:persistedControl={{ checked: $settings.backgroundType === 'preset' }} checked={$settings.backgroundType === 'preset'} onchange={() => setBgType('preset')} />
 								{$_('settings.bgPreset')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="bgtype" value="local" checked={$settings.backgroundType === 'local'} onchange={() => setBgType('local')} />
+								<input type="radio" class="radio radio-primary" name="bgtype" value="local" use:persistedControl={{ checked: $settings.backgroundType === 'local' }} checked={$settings.backgroundType === 'local'} onchange={() => setBgType('local')} />
 								{$_('settings.bgLocal')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="bgtype" value="url" checked={$settings.backgroundType === 'url'} onchange={() => setBgType('url')} />
+								<input type="radio" class="radio radio-primary" name="bgtype" value="url" use:persistedControl={{ checked: $settings.backgroundType === 'url' }} checked={$settings.backgroundType === 'url'} onchange={() => setBgType('url')} />
 								{$_('settings.bgUrl')}
 							</label>
 						</div>
@@ -315,8 +322,8 @@
 					{#if $settings.backgroundType === 'url'}
 						<div class="mb-6">
 							<span class="block text-sm text-white/80 mb-2">{$_('settings.bgUrlLabel')}</span>
-							<input type="text" bind:value={bgUrlInput} placeholder="https://example.com/image.jpg" class="input w-full mb-2 bg-white/10 border-transparent text-white placeholder:text-white/50" />
-							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={handleUrlApply}>{$_('common.apply')}</button>
+							<input type="text" bind:value={bgUrlInput} placeholder={$_('settings.bgUrlPlaceholder')} class="input w-full mb-2 bg-white/10 border-transparent text-white placeholder:text-white/50" />
+							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={() => runAction(handleUrlApply)}>{$_('common.apply')}</button>
 							<p class="mt-1 text-xs text-white/60">{$_('settings.bgUrlHint')}</p>
 						</div>
 					{/if}
@@ -331,17 +338,24 @@
 						<span class="block text-sm text-white/80 mb-2">{$_('settings.qaMode')}</span>
 						<div class="flex flex-wrap gap-4">
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="qamode" value="manual" checked={$settings.quickAccessMode === 'manual'} onchange={() => setQaMode('manual')} />
+								<input type="radio" class="radio radio-primary" name="qamode" value="manual" use:persistedControl={{ checked: $settings.quickAccessMode === 'manual' }} checked={$settings.quickAccessMode === 'manual'} onchange={() => runAction(() => setQaMode('manual'))} />
 								{$_('settings.qaModeManual')}
 							</label>
 							<label class="flex items-center cursor-pointer gap-2 text-sm text-white/80 hover:text-white">
-								<input type="radio" class="radio radio-primary" name="qamode" value="bookmark" checked={$settings.quickAccessMode === 'bookmark'} onchange={() => setQaMode('bookmark')} />
+								<input type="radio" class="radio radio-primary" name="qamode" value="bookmark" use:persistedControl={{ checked: $settings.quickAccessMode === 'bookmark' }} checked={$settings.quickAccessMode === 'bookmark'} onchange={() => runAction(() => setQaMode('bookmark'))} />
 								{$_('settings.qaModeBookmark')}
 							</label>
 						</div>
 					</div>
 
-					<!-- 预置图标替换开关 -->
+					<div class="mb-6 flex items-center justify-between">
+							<label for="qa-position" class="text-sm text-white/80">{$_('settings.qaPosition')}</label>
+							<select id="qa-position" class="select select-sm bg-black text-white" use:persistedControl={{ value: $settings.quickAccessPosition }} value={$settings.quickAccessPosition} onchange={(e) => saveSettings({ quickAccessPosition: e.currentTarget.value })}>
+								<option value="bottom">{$_('settings.qaBottom')}</option>
+								<option value="top">{$_('settings.qaTop')}</option>
+							</select>
+						</div>
+						<!-- 预置图标替换开关 -->
 					<div class="mb-6 flex items-center justify-between">
 						<div>
 							<div class="text-sm text-white/80">{$_('settings.qaUsePresetIcons')}</div>
@@ -350,8 +364,8 @@
 						<input
 							type="checkbox"
 							class="toggle toggle-primary"
-							checked={$settings.usePresetIcons}
-							onchange={(e) => settings.save({ usePresetIcons: e.currentTarget.checked })}
+							use:persistedControl={{ checked: $settings.usePresetIcons }} checked={$settings.usePresetIcons}
+							onchange={(e) => saveSettings({ usePresetIcons: e.currentTarget.checked })}
 						/>
 					</div>
 
@@ -361,8 +375,9 @@
 							<span class="block text-sm text-white/80 mb-2">{$_('settings.qaBookmarkFolder')}</span>
 							<select
 								class="select select-sm select-bordered bg-black text-white"
-								value={$settings.bookmarkFolderId ?? ''}
-								onchange={(e) => handleBookmarkFolderChange(e.currentTarget.value)}
+								aria-label={$_('settings.qaBookmarkFolder')}
+								use:persistedControl={{ value: $settings.bookmarkFolderId ?? '' }} value={$settings.bookmarkFolderId ?? ''}
+								onchange={(e) => { const value = e.currentTarget.value; runAction(() => handleBookmarkFolderChange(value)); }}
 							>
 								<option value="">{$_('settings.qaBookmarkFolderPlaceholder')}</option>
 								{#each bookmarkFolders as bf (bf.id)}
@@ -380,8 +395,8 @@
 						<span class="block text-sm text-white/80 mb-2">{$_('settings.qaAdd')}</span>
 						<div class="flex gap-2 mb-3">
 							<input type="text" bind:value={qaTitle} placeholder={$_('settings.qaNamePlaceholder')} class="input input-sm flex-1 bg-white/10 text-white placeholder:text-white/50" />
-							<input type="text" bind:value={qaUrl} placeholder="https://github.com" class="input input-sm flex-[2] bg-white/10 text-white placeholder:text-white/50" />
-							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={handleAddQa}>{$_('common.add')}</button>
+							<input type="text" bind:value={qaUrl} placeholder={$_('settings.qaUrlPlaceholder')} class="input input-sm flex-[2] bg-white/10 text-white placeholder:text-white/50" />
+							<button type="button" class="btn btn-sm bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={() => runAction(handleAddQa)}>{$_('common.add')}</button>
 						</div>
 						<p class="text-xs text-white/60">{$_('settings.qaAddHint')}</p>
 					</div>
@@ -392,27 +407,28 @@
 							{#if $quickAccess.length === 0}
 								<p class="text-xs text-white/60">{$_('settings.qaEmpty')}</p>
 							{/if}
-							{#each $quickAccess as item, index (item.url)}
-								{#if editingIndex === index}
+							{#each $quickAccess as item, index (item.id)}
+								{#if editingId === item.id}
 									<div class="rounded-lg border border-[#399fff]/40 bg-[#399fff]/10 p-3 flex flex-col gap-2">
 										<input type="text" bind:value={editTitle} placeholder={$_('settings.qaEditNamePlaceholder')} class="input input-sm bg-white/10 text-white placeholder:text-white/50" />
 										<input type="text" bind:value={editUrl} placeholder={$_('settings.qaEditUrlPlaceholder')} class="input input-sm bg-white/10 text-white placeholder:text-white/50" />
 										<div class="flex justify-end gap-2">
-											<button type="button" class="btn btn-xs bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={() => saveEdit(index)}>{$_('common.save')}</button>
-											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => (editingIndex = null)}>{$_('common.cancel')}</button>
+											<button type="button" class="btn btn-xs bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={() => runAction(() => saveEdit(item.id))}>{$_('common.save')}</button>
+											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => (editingId = null)}>{$_('common.cancel')}</button>
 										</div>
 									</div>
 								{:else}
 									<div
+										role="group" aria-label={item.title}
 										class="flex items-center justify-between gap-2 p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition
-										{dragOverIndex === index ? 'border-t-2 border-t-[#399fff]' : ''}"
+										{dragOverId === item.id ? 'border-t-2 border-t-[#399fff]' : ''}"
 										ondragover={(e) => {
 											e.preventDefault();
-											dragOverIndex = index;
+											dragOverId = item.id;
 										}}
 										ondrop={(e) => {
 											e.preventDefault();
-											handleDrop(index);
+											runAction(() => handleDrop(item.id));
 										}}
 									>
 										<div class="flex items-center gap-3 flex-1 min-w-0">
@@ -422,8 +438,8 @@
 												draggable="true"
 												title={$_('settings.qaDragAria')}
 												aria-label={$_('settings.qaDragAria')}
-												ondragstart={() => (draggingIndex = index)}
-												ondragend={() => (draggingIndex = null)}
+												ondragstart={(e) => { draggingId = item.id; e.dataTransfer?.setData('text/plain', item.id); }}
+												ondragend={() => (draggingId = null)}
 											>
 												<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 													<line x1="4" y1="8" x2="20" y2="8"></line>
@@ -432,7 +448,7 @@
 												</svg>
 											</button>
 											{#if item.icon}
-												<img src={item.icon} alt="" class="w-6 h-6 rounded" onerror={(e) => e.currentTarget.remove()} />
+												<img src={item.icon} alt="" class="w-6 h-6 rounded" onerror={(e) => (e.currentTarget.style.visibility = 'hidden')} />
 											{/if}
 											<div class="flex-1 min-w-0 overflow-hidden">
 												<div class="text-sm text-white font-medium truncate">{item.title}</div>
@@ -440,8 +456,10 @@
 											</div>
 										</div>
 										<div class="flex gap-2 shrink-0">
-											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => startEdit(index)}>{$_('common.edit')}</button>
-											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => handleRemoveQa(index)}>{$_('common.remove')}</button>
+											<button type="button" class="btn btn-xs bg-white/10" aria-label={$_('settings.qaMoveUp', { values: { title: item.title } })} disabled={index === 0} onclick={() => runAction(() => quickAccess.reorder(item.id, $quickAccess[index - 1]?.id))}>↑</button>
+											<button type="button" class="btn btn-xs bg-white/10" aria-label={$_('settings.qaMoveDown', { values: { title: item.title } })} disabled={index === $quickAccess.length - 1} onclick={() => runAction(() => quickAccess.reorder(item.id, $quickAccess[index + 1]?.id))}>↓</button>
+											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => startEdit(item)}>{$_('common.edit')}</button>
+											<button type="button" class="btn btn-xs bg-white/10 hover:bg-white/20 text-white" onclick={() => runAction(() => handleRemoveQa(item.id))}>{$_('common.remove')}</button>
 										</div>
 									</div>
 								{/if}
@@ -460,8 +478,8 @@
 						<input
 							type="checkbox"
 							class="toggle toggle-primary"
-							checked={$settings.quoteEnabled}
-							onchange={(e) => settings.save({ quoteEnabled: e.currentTarget.checked })}
+							use:persistedControl={{ checked: $settings.quoteEnabled }} checked={$settings.quoteEnabled}
+							onchange={(e) => saveSettings({ quoteEnabled: e.currentTarget.checked })}
 						/>
 					</div>
 
@@ -474,13 +492,13 @@
 										type="checkbox"
 										class="checkbox checkbox-primary checkbox-sm"
 										value={qt.value}
-										checked={$settings.quoteTypes.includes(qt.value)}
+										use:persistedControl={{ checked: $settings.quoteTypes.includes(qt.value) }} checked={$settings.quoteTypes.includes(qt.value)}
 										onchange={(e) => {
 											const value = e.currentTarget.value;
 											const next = e.currentTarget.checked
 												? [...$settings.quoteTypes, value]
 												: $settings.quoteTypes.filter((v) => v !== value);
-											settings.save({ quoteTypes: next });
+											saveSettings({ quoteTypes: next });
 										}}
 									/>
 									{$_('quote.' + qt.key)}
@@ -490,7 +508,7 @@
 					</div>
 
 					<div>
-						<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleClearQuoteCache}>{$_('settings.quoteClearCache')}</button>
+						<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={() => runAction(handleClearQuoteCache)}>{$_('settings.quoteClearCache')}</button>
 					</div>
 				</section>
 
@@ -503,8 +521,8 @@
 							<input
 								type="checkbox"
 								class="toggle toggle-primary"
-								checked={$settings.copyProtection}
-								onchange={(e) => settings.save({ copyProtection: e.currentTarget.checked })}
+								use:persistedControl={{ checked: $settings.copyProtection }} checked={$settings.copyProtection}
+								onchange={(e) => saveSettings({ copyProtection: e.currentTarget.checked })}
 							/>
 						</div>
 						<p class="mt-1 text-xs text-white/60">{$_('settings.copyProtectionHint')}</p>
@@ -517,7 +535,7 @@
 					<div>
 						<span class="block text-sm text-white/80 mb-2">{$_('settings.dataBackup')}</span>
 						<div class="flex gap-3">
-							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={handleExport}>{$_('settings.export')}</button>
+							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={() => runAction(handleExport)}>{$_('settings.export')}</button>
 							<button type="button" class="btn btn-sm bg-white/10 hover:bg-white/20 text-white" onclick={() => importInput?.click()}>{$_('settings.import')}</button>
 							<input type="file" accept=".json" bind:this={importInput} class="hidden" onchange={handleImport} />
 						</div>
@@ -568,5 +586,5 @@
 				<button type="button" class="btn btn-md flex-1 bg-[#399fff]/30 hover:bg-[#399fff]/50 text-white" onclick={close}>{$_('common.done')}</button>
 			</div>
 		</div>
-	</div>
+	</dialog>
 {/if}

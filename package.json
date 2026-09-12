@@ -9,7 +9,9 @@
 		"build": "vite build && node scripts/patch-manifest.mjs",
 		"preview": "vite preview",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch"
+		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+		"test": "node tests/regressions.test.mjs",
+		"test:browser": "node tests/browser-smoke.mjs"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-static": "^3.0.8",

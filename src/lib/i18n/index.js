@@ -32,7 +32,8 @@ addMessages('en-US', enUS);
  */
 export function resolveLocale(pref) {
 	if (SUPPORTED_LOCALES.includes(pref)) return pref;
-	return browser ? getLocaleFromNavigator() ?? 'zh-CN' : 'zh-CN';
+	const language = (browser ? getLocaleFromNavigator() : null)?.toLowerCase() ?? '';
+	return language === 'en' || language.startsWith('en-') ? 'en-US' : 'zh-CN';
 }
 
 /* ---------- 与设置同步（仅浏览器环境） ---------- */
@@ -40,6 +41,7 @@ if (browser) {
 	// 先用当前设置确定初始语言，设置一旦加载/变更即切换到正确语言
 	locale.set(resolveLocale(get(settings).locale));
 	settings.subscribe(($settings) => {
-		locale.set(resolveLocale($settings.locale));
+		const next = resolveLocale($settings.locale);
+		if (get(locale) !== next) locale.set(next);
 	});
 }

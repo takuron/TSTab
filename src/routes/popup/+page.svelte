@@ -1,7 +1,10 @@
 <script>
-	import { onMount } from 'svelte';
+	// 工具栏弹窗：加载语言偏好后读取当前页面并管理快捷访问。
+	import { onMount, onDestroy } from 'svelte';
 	import { _ } from 'svelte-i18n';
-	import { faviconUrl, quickAccess } from '$lib/stores';
+	import { faviconUrl, quickAccess, settings } from '$lib/stores';
+	import { isImageSource } from '$lib/validation';
+	import { webUrlOrNull } from '$lib/search';
 	import { isExtension } from '$lib/storage';
 
 	let tab = { title: $_('popup.loadingTab'), url: '', icon: '' };
@@ -20,7 +23,7 @@
 			}
 			tab = {
 				title: active.title || $_('popup.unknownTab'),
-				url: active.url || '',
+				url: webUrlOrNull(active.url) || '',
 				icon: faviconFor(active.url, active.favIconUrl)
 			};
 		} else {
@@ -35,14 +38,21 @@
 	}
 
 	function faviconFor(url, favicon) {
-		if (favicon && !favicon.includes('chrome://')) return favicon;
+		if (favicon && isImageSource(favicon)) return favicon;
 		return faviconUrl(url);
 	}
 
 	onMount(async () => {
-		await quickAccess.load();
-		await loadTab();
+		try {
+			await Promise.all([settings.load(), quickAccess.load()]);
+			await loadTab();
+			if (!tab.url) showStatus($_('popup.unsupportedUrl'), 'error');
+		} catch (error) {
+			console.error(error);
+			showStatus($_('msg.operationFailed'), 'error');
+		}
 	});
+	onDestroy(() => clearTimeout(statusTimer));
 
 	$: if (loaded) {
 		exists = $quickAccess.some((it) => it.url === tab.url);
@@ -81,7 +91,7 @@ async function handleRemove() {
 		if (index === -1) {
 			showStatus($_('popup.statusNotIn'), 'info');
 		} else {
-			await quickAccess.remove(index);
+			await quickAccess.remove($quickAccess[index].id);
 			showStatus($_('popup.statusRemoved'), 'success');
 		}
 	} catch (err) {
@@ -104,7 +114,7 @@ async function handleRemove() {
 	<title>{$_('popup.title')}</title>
 </svelte:head>
 
-<div class="w-[320px] min-h-[260px] font-sans text-white flex flex-col">
+<div data-popup class="w-[320px] min-h-[260px] font-sans text-white flex flex-col">
 	<!-- 头部 -->
 	<header class="px-4 py-3 bg-white/10 backdrop-blur-md border-b border-white/20">
 		<h2 class="text-base font-semibold">{$_('popup.header')}</h2>
@@ -147,7 +157,7 @@ async function handleRemove() {
 			type="button"
 			class="w-full py-2.5 rounded-md font-medium text-white bg-[#399fff]/90 hover:bg-[#399fff] transition disabled:bg-white/20 disabled:cursor-not-allowed
 			{exists ? 'hidden' : ''}"
-			disabled={working || !loaded}
+			disabled={working || !loaded || !tab.url}
 			onclick={handleAdd}
 		>
 			{$_('popup.add')}
@@ -156,18 +166,10 @@ async function handleRemove() {
 			type="button"
 			class="w-full py-2.5 rounded-md font-medium text-white bg-white/10 border border-white/30 hover:bg-white/20 transition disabled:bg-white/10 disabled:cursor-not-allowed
 			{exists ? '' : 'hidden'}"
-			disabled={working || !loaded}
+			disabled={working || !loaded || !tab.url}
 			onclick={handleRemove}
 		>
 			{$_('popup.remove')}
 		</button>
 	</footer>
 </div>
-
-<style>
-	:global(body) {
-		width: 320px;
-		margin: 0;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	}
-</style>

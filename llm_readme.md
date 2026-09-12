@@ -84,14 +84,14 @@
 ### 3.6 验证与构建纪律
 
 *   **规则 1：** 每次编码任务完成后必须运行 `pnpm run check`，并修复所有由本次改动引入的错误。
-*   **规则 2：** 扩展产物必须且只能通过 `pnpm run build` 生成（它会自动执行 `scripts/patch-manifest.mjs` 补写 MV3 CSP 哈希）。**禁止**手改 `build/` 目录下的任何文件，也禁止绕过构建脚本直接产出扩展。
+*   **规则 2：** 扩展产物必须且只能通过 `pnpm run build` 生成（它会自动执行 `scripts/patch-manifest.mjs` 外部化启动脚本并补写 MV3 CSP）。**禁止**手改 `build/` 目录下的任何文件，也禁止绕过构建脚本直接产出扩展。
 *   **规则 3：** 所有用户数据必须仅存于本地（`chrome.storage`，开发环境降级 `localStorage`），不得引入任何远端上报或第三方分析。
 
 ### 3.7 国际化（i18n）规范
 
 界面文案使用 **`svelte-i18n`** 实现多语言（中文默认 + 英文），语言偏好由设置项 `settings.locale` 控制（跟随浏览器 / 固定语言）。详见 `docs/architecture.md` 第 9 节。
 
-*   **规则 1：禁止硬编码 UI 文案。** 所有用户可感知的字符串（含 `title` / `aria-label` / `placeholder` / `alert` / `confirm` 文本）必须通过 `$_('key')` 读取；脚本内提示用 `$_('msg.xxx', { vars })` 插值。
+*   **规则 1：禁止硬编码 UI 文案。** 所有用户可感知的字符串（含 `title` / `aria-label` / `placeholder` / `alert` / `confirm` 文本）必须通过 `$_('key')` 读取；脚本内提示用 `$_('msg.xxx', { values })` 插值。
 *   **规则 2：文案必须双语言。** 新增或修改任何 key，都必须**同时**更新 `src/lib/i18n/locales/zh-CN.json` 与 `en-US.json`，二者键名与层级必须一致。
 *   **规则 3：组件内写法。** 组件统一 `import { _ } from 'svelte-i18n'` 后使用 `$_('key')`。注意 `$_` 是 Svelte 自动订阅语法，仅对**字面命名 `_`** 的 store 生效，禁止改名为 `_t` 等别名。`stores.ts` 等非组件内取文案用 `get(_)('key')`。
 *   **规则 4：语言逻辑集中。** 语言包注册、`init`、与 `settings.locale` 的同步逻辑只放在 `src/lib/i18n/index.js`，不要在组件里重复「选语言」逻辑。

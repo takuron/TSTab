@@ -1,8 +1,10 @@
 <script>
+	// 搜索输入与原生可键盘操作的引擎选择器。
 	import { _ } from 'svelte-i18n';
+	import { persistedControl } from '$lib/controls';
 	import { SEARCH_ENGINES } from '$lib/config';
 	import { buildSearchUrl } from '$lib/search';
-	import { settings } from '$lib/stores';
+	import { runAction, settings } from '$lib/stores';
 
 	let query = '';
 
@@ -13,12 +15,6 @@
 		window.location.href = buildSearchUrl(q, $settings.searchEngine);
 	}
 
-	function pickEngine(value) {
-		if (value !== $settings.searchEngine) {
-			settings.save({ searchEngine: value });
-		}
-		document.activeElement?.blur?.();
-	}
 </script>
 
 <form
@@ -37,36 +33,12 @@
 			class="flex-1 bg-transparent outline-none px-5 py-3 text-base text-white placeholder:text-white/60 select-text"
 		/>
 
-		<!-- 引擎切换 -->
-		<div class="dropdown dropdown-end">
-			<button
-				type="button"
-				tabindex="0"
-				class="flex items-center gap-1 glass text-white text-sm px-3 py-2 rounded-full border border-transparent hover:border-white/30 hover:bg-white/10 cursor-pointer focus:outline-2 focus:outline-[#399fff]"
-				aria-label={$_('search.engineAria')}
-			>
-				<span>{$_('engine.' + $settings.searchEngine)}</span>
-				<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-					<polyline points="6 9 1 4 11 4"></polyline>
-				</svg>
-			</button>
-			<ul
-				tabindex="0"
-				class="dropdown-content z-[999] mt-2 menu w-32 bg-black/75 backdrop-blur-lg rounded-lg border border-white/15 p-1 shadow-[0_4px_16px_rgba(0,0,0,0.3)]"
-			>
-				{#each Object.entries(SEARCH_ENGINES) as [value, def] (value)}
-					<li>
-						<button
-							type="button"
-							class="rounded-md px-3 py-2 text-sm text-white/80 hover:bg-white/10 hover:text-white
-								{$settings.searchEngine === value ? 'bg-[#399fff]/20 text-white font-medium' : ''}"
-							onclick={() => pickEngine(value)}
-						>
-							{$_('engine.' + value)}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		</div>
+		<select aria-label={$_('search.engineAria')} use:persistedControl={{ value: $settings.searchEngine }} value={$settings.searchEngine}
+			class="select select-sm w-auto bg-black/60 text-white border-white/20 rounded-full"
+			onchange={(e) => { const value = e.currentTarget.value; runAction(() => settings.save({ searchEngine: value })); }}>
+			{#each Object.keys(SEARCH_ENGINES) as value}
+				<option value={value}>{$_('engine.' + value)}</option>
+			{/each}
+		</select>
 	</div>
 </form>
