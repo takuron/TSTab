@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "简洁新标签页",
+	"name": "TsTab",
 	"version": "1.0.0",
 	"description": "一个简洁优雅的新标签页，支持自定义背景、每日一言、搜索功能、快捷访问。基于 SvelteKit + Tailwind CSS v4 + DaisyUI 5 构建。",
 	"chrome_url_overrides": {
