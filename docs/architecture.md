@@ -69,7 +69,10 @@ src/
     popup/+page.svelte     # 弹窗：读取当前标签页（chrome.tabs.query），添加/移除快捷访问
 static/
   manifest.json           # MV3 清单（构建时被 patch-manifest.mjs 补写 CSP 后复制到 build/）
-  icons/  images/         # 图标与内置背景图（取自 Snow，GPL v3）
+  icon.png               # 1024×1024 品牌源图（经无损压缩）
+  icon.svg               # 品牌图标的可编辑矢量重绘版
+  icons/                 # 16/48/128 像素扩展图标、品牌 SVG 与快捷访问图标
+  images/                # 内置背景图（取自 Snow，GPL v3）
 scripts/
   patch-manifest.mjs      # 构建后处理：见第 6 节
 ```

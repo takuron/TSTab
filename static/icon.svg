@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <title>TSTab · 新视野</title>
+  <desc>浅蓝天空、白色朝阳与两层弧形地平线组成的圆形图标。</desc>
+  <defs>
+    <linearGradient id="sky" x1="245" y1="130" x2="765" y2="820" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#98CEFA"/>
+      <stop offset="1" stop-color="#73BAF5"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="574" y1="340" x2="707" y2="527" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF5"/>
+      <stop offset="1" stop-color="#FAFBF8"/>
+    </linearGradient>
+    <linearGradient id="ridge" x1="347" y1="537" x2="513" y2="705" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C2E5FC"/>
+      <stop offset="1" stop-color="#A4D4F8"/>
+    </linearGradient>
+    <linearGradient id="foreground" x1="370" y1="594" x2="678" y2="903" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#49A5F2"/>
+      <stop offset="1" stop-color="#3997EE"/>
+    </linearGradient>
+    <clipPath id="disc">
+      <ellipse cx="512" cy="515" rx="421" ry="413"/>
+    </clipPath>
+    <filter id="elevation" x="-15%" y="-30%" width="130%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#236BAF" flood-opacity=".2"/>
+    </filter>
+  </defs>
+  <g clip-path="url(#disc)">
+    <ellipse cx="512" cy="515" rx="421" ry="413" fill="url(#sky)"/>
+    <circle cx="634" cy="456" r="128" fill="url(#sun)"/>
+    <!-- 后层弧面覆盖朝阳底部，呈现地平线。 -->
+    <path d="M80 664C325 535 639 458 945 465V950H80Z" fill="url(#ridge)" filter="url(#elevation)"/>
+    <!-- 前层弧面与短阴影形成纸片叠层。 -->
+    <path d="M175 808C365 639 631 536 945 493V950H175Z" fill="url(#foreground)" filter="url(#elevation)"/>
+  </g>
+</svg>
