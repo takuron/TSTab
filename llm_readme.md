@@ -23,6 +23,7 @@
 - [一言 API 与双缓存机制](docs/quote_api.md)
 - [TODO 列表与路线图](docs/TODO.md)
 - [变更日志](docs/Changelog.md)
+- [隐私政策单页（中英双语）](docs/privacy.html)
 
 ## 3 LLM 编码规范
 

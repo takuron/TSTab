@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="TSTab 隐私政策：了解本地数据、书签访问、第三方网络请求及数据删除方式。TSTab Privacy Policy.">
+  <meta name="referrer" content="no-referrer">
+  <title>TSTab 隐私政策 · Privacy Policy</title>
+  <style>
+    :root { color-scheme: dark; --bg: #081321; --panel: #101f32; --text: #eaf2fc; --muted: #adbed3; --accent: #80c3ff; --line: #2b4059; }
+    * { box-sizing: border-box; }
+    html { scroll-padding-top: 24px; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.85 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    .wrap { width: min(880px, 100%); margin: auto; padding: 48px 24px; }
+    header { padding-bottom: 32px; border-bottom: 1px solid var(--line); }
+    .brand { margin: 0 0 8px; color: var(--accent); font-size: 20px; font-weight: 700; letter-spacing: .04em; }
+    h1 { margin: 0; font-size: clamp(28px, 5vw, 42px); line-height: 1.35; }
+    h2 { margin: 0 0 20px; font-size: 28px; }
+    h3 { margin: 28px 0 8px; font-size: 20px; }
+    p { margin: 10px 0; }
+    a { color: var(--accent); text-underline-offset: 4px; overflow-wrap: anywhere; }
+    a:hover { color: white; }
+    a:focus-visible { outline: 3px solid var(--accent); outline-offset: 5px; border-radius: 2px; }
+    nav { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-top: 20px; }
+    .meta, footer { color: var(--muted); font-size: 14px; }
+    .summary { margin: 24px 0; padding: 18px 22px; background: var(--panel); border-left: 3px solid #399fff; border-radius: 0 12px 12px 0; }
+    article { padding-top: 36px; }
+    article + article { margin-top: 40px; border-top: 1px solid var(--line); }
+    #contact { margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--line); }
+    ul { margin: 8px 0; padding-left: 24px; }
+    li { margin: 8px 0; }
+    code { font-size: .92em; overflow-wrap: anywhere; }
+    footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); }
+    @media (max-width: 480px) { .wrap { padding: 28px 20px; } .summary { padding: 14px 16px; } }
+    @media print { :root { color-scheme: light; --bg: white; --text: black; --muted: #444; --accent: #164d7a; --line: #ccc; --panel: #f5f5f5; } .wrap { padding: 0; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="brand">TSTab</p>
+      <h1>隐私政策 <span lang="en">/ Privacy Policy</span></h1>
+      <p class="meta">生效及更新日期 / Effective and updated: <time datetime="2026-10-20">2026-10-20</time></p>
+      <nav aria-label="语言与联系方式 / Language and contact">
+        <a href="#zh" lang="zh-CN">中文</a>
+        <a href="#en" lang="en">English</a>
+        <a href="#contact">联系维护者 / Contact</a>
+      </nav>
+    </header>
+    <main>
+      <article id="zh" lang="zh-CN" aria-labelledby="zh-title">
+        <h2 id="zh-title">中文隐私政策</h2>
+        <div class="summary">TSTab 的设置和快捷访问保存在您的设备上，维护者不运营用于收集扩展使用数据的服务器。部分功能会直接连接第三方服务；本地存储不代表完全不联网。</div>
+
+        <h3>1. 适用范围与维护者</h3>
+        <p>本政策适用于由 GitHub 用户 <a href="https://github.com/takuron" rel="noreferrer">takuron</a> 维护的 TSTab 新标签页扩展及本隐私政策页面，说明扩展中提供新标签页、搜索、快捷访问、背景及一言功能时的数据处理方式。</p>
+        <p>TSTab 无需注册账户，不内置广告、使用分析、遥测或用户画像，不向维护者上传您的设置、书签、搜索词或背景图片，也不出售这些数据。</p>
+
+        <h3>2. 在本机处理的数据</h3>
+        <ul>
+          <li><strong>设置：</strong>语言、搜索引擎、背景来源、一言分类与显示偏好、快捷访问模式、图标选项、书签文件夹标识等，保存在扩展的 <code>chrome.storage.local</code> 中；扩展未使用浏览器同步存储。网页开发预览使用该站点的 <code>localStorage</code>。</li>
+          <li><strong>手动快捷访问：</strong>保存您添加的网页标题、地址、图标地址或图标数据、排序及条目标识、添加时间。点击扩展工具栏图标时，扩展临时读取当前标签页的标题、地址和可用图标，供您确认添加或移除；不读取网页正文，也不持续监控其他标签页或读取浏览历史列表。</li>
+          <li><strong>浏览器书签：</strong>使用书签模式或选择书签文件夹时，扩展读取书签树以列出文件夹、查找所选文件夹，并展示其直接子书签的标题、地址和图标。书签树在本机处理，不上传给维护者，扩展不修改您的浏览器书签。所选文件夹标识会保存在本机。</li>
+          <li><strong>背景：</strong>您主动选择的本地图片以图片数据形式保存在扩展本地存储中，不上传到维护者或图片服务。使用 URL 背景时，扩展保存您输入的图片地址。扩展自带的默认背景图片随安装包提供。</li>
+          <li><strong>一言缓存：</strong>在本机保存句子、来源信息、分类相关设置及缓存和展示时间，以支持轮换和离线展示。</li>
+          <li><strong>搜索输入：</strong>输入时不发送搜索建议请求，也不由扩展持久保存搜索词；只有提交时才打开相应搜索结果或识别出的网页地址。浏览器或目标网站可能自行保存访问记录。</li>
+        </ul>
+
+        <h3>3. 第三方连接与接收的信息</h3>
+        <p>以下连接由您的浏览器直接发起，不经由维护者服务器中转。服务提供方可能接收到 IP 地址、请求时间、请求地址和浏览器发送的常规网络信息；Cookie 等信息是否随请求发送取决于请求类型、浏览器设置和目标网站。</p>
+        <ul>
+          <li><strong>一言：</strong>默认开启。启用时，扩展会在打开新标签页、刷新或补充缓存等情况下连接 <a href="https://hitokoto.cn/" rel="noreferrer">一言</a> 的 <code>https://v1.hitokoto.cn/</code>，发送所选句子分类参数以获取内容。该 API 请求使用 <code>credentials: 'omit'</code>，不附带 Cookie；扩展不把您的书签、快捷访问列表或搜索词放入此请求。您可以在设置中关闭一言，停止后续获取；已发出的请求可能仍由服务方完成处理。</li>
+          <li><strong>站点图标：</strong>Dock 命中并启用预置图标时使用本地资源；其他情况下会加载已保存的图标地址或网站根目录的 <code>/favicon.ico</code>。设置中的快捷访问列表也可能直接加载保存的图标地址。因此，即使未点击该快捷访问，图标所在网站仍可能收到请求并得知被请求的图标地址。预置图标开关不保证设置界面也完全不请求远程图标。</li>
+          <li><strong>远程背景：</strong>选择 URL 背景后，浏览器会从您指定的地址及其可能的重定向目标获取图片。使用默认图片、渐变或本地图片可避免此类远程背景请求。</li>
+          <li><strong>主动搜索或访问网页：</strong>提交搜索时，搜索词会出现在发送给所选搜索服务的查询 URL 中。目前可选 Google、百度、Bing、DuckDuckGo、Startpage、搜狗。输入网址或点击快捷访问时，浏览器访问相应网站。各服务按其自己的隐私政策处理数据。扩展内选择搜索引擎不会改变 Edge 地址栏的默认搜索引擎。</li>
+        </ul>
+        <p>一言和内置搜索服务使用 HTTPS。用户提供的背景、快捷访问或图标地址可能使用 HTTP；此类连接不具备 HTTPS 的传输保护，请优先使用可信的 HTTPS 地址。维护者无法控制第三方服务的数据保存期限、日志、Cookie 或跨地区处理；您可向对应服务了解其政策并行使相关权利。</p>
+
+        <h3>4. 权限用途</h3>
+        <ul>
+          <li><code>storage</code>：在本机保存设置、手动快捷访问、本地背景及一言缓存。</li>
+          <li><code>activeTab</code>：仅在您点击工具栏图标后，临时获取当前网页的标题、地址及图标信息，用于快捷访问操作。</li>
+          <li><code>bookmarks</code>：在书签模式与文件夹选择功能中读取书签树。</li>
+          <li><code>https://v1.hitokoto.cn/*</code>：获取一言内容。域名权限不用于上传您的快捷访问或书签。</li>
+        </ul>
+
+        <h3>5. 保存期限、控制与删除</h3>
+        <p>本地设置、手动快捷访问、背景和缓存保留至您修改、删除、替换相关内容，或移除扩展数据。缓存会随功能运行被更新，并不按统一期限自动清除。您可以在设置中查看或编辑配置、移除手动快捷访问、切换到手动模式停止书签展示、关闭一言、切换背景来源，以及清空一言缓存。单独清空缓存而保持一言开启，仍可能重新获取内容。</p>
+        <p>要完整删除扩展保存的数据，可在 <code>edge://extensions/</code> 中移除 TSTab。浏览器书签不由扩展删除；如需删除书签，请使用 Edge 的收藏夹管理功能。若使用网页开发预览，可清除对应站点的存储。</p>
+        <p>您可主动将配置导出到本地 JSON，或从本地 JSON 导入。备份可能包含网页地址、图标、本地背景图片及一言缓存，扩展不对备份加密，也不自动上传；请妥善保管，勿公开分享含私人内容的备份。卸载扩展不会删除已导出的文件，也不会清除第三方服务已保存的请求记录。</p>
+
+        <h3>6. 本页面与联系反馈</h3>
+        <p>本页面不包含分析脚本、广告、远程字体或远程图片，不主动使用 Cookie 或浏览器存储。由 GitHub Pages 托管时，GitHub 会按其 <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noreferrer">隐私声明</a> 处理提供托管服务所需的信息，例如访问者 IP 地址。主动点击外部链接后，目标网站适用其自己的政策。</p>
+        <p>若您主动通过 GitHub 联系维护者，您提交的账号信息和反馈内容将由 GitHub 及维护者为回复和处理问题而使用；维护者不需要您的完整书签或配置备份来处理一般隐私问题。</p>
+
+        <h3>7. 政策变更</h3>
+        <p>功能或数据处理方式变化时，本政策将更新并标明更新日期；依法或平台规则需要另行告知或获得同意的，将按相应要求处理。</p>
+      </article>
+
+      <article id="en" lang="en" aria-labelledby="en-title">
+        <h2 id="en-title">Privacy Policy in English</h2>
+        <div class="summary">TSTab keeps settings and quick-access data on your device. The maintainer does not operate a server to collect extension usage data. Some features connect directly to third parties; local storage does not mean that the extension never connects to the internet.</div>
+
+        <h3>1. Scope and maintainer</h3>
+        <p>This policy covers the TSTab new-tab extension maintained by GitHub user <a href="https://github.com/takuron" rel="noreferrer">takuron</a> and this policy page. It describes data handling for the extension’s new-tab, search, quick-access, background and quote features.</p>
+        <p>TSTab requires no account and includes no advertising, usage analytics, telemetry or profiling. It does not upload your settings, bookmarks, search terms or background images to the maintainer, and does not sell this data.</p>
+
+        <h3>2. Data processed on your device</h3>
+        <ul>
+          <li><strong>Settings:</strong> Language, search engine, background source, quote categories and display preferences, quick-access mode, icon preferences and the selected bookmark folder identifier are kept in <code>chrome.storage.local</code>. The extension does not use browser sync storage. Web development previews use that site’s <code>localStorage</code>.</li>
+          <li><strong>Manual quick access:</strong> Saved items contain page titles, URLs, icon URLs or image data, order, identifiers and creation times. Clicking the extension toolbar icon temporarily reads the current tab’s title, URL and available icon for you to confirm adding or removing it. The extension does not read page bodies, continuously monitor other tabs or read the browsing-history list.</li>
+          <li><strong>Bookmarks:</strong> Bookmark mode and folder selection read the bookmark tree to list folders and locate the selected folder, then display its direct child bookmarks’ titles, URLs and icons. The tree is processed locally, is not uploaded to the maintainer and is not modified by the extension. The selected folder identifier is stored locally.</li>
+          <li><strong>Backgrounds:</strong> Images you select from your device are stored locally as image data and are not uploaded to the maintainer or an image service. URL backgrounds store the address you enter. The default background image is bundled with the extension.</li>
+          <li><strong>Quote cache:</strong> Quotes, source information, category settings, cache timestamps and display timestamps are stored locally for rotation and offline display.</li>
+          <li><strong>Search input:</strong> Typing does not request search suggestions or persist search terms in extension storage. Submission navigates to search results or a recognized web address. The browser or destination website may keep its own visit records.</li>
+        </ul>
+
+        <h3>3. Third-party connections and information received</h3>
+        <p>Your browser makes the following requests directly, without a maintainer-operated intermediary. Providers may receive your IP address, request time and address, and ordinary network information sent by the browser. Whether cookies or similar information accompany a request depends on its type, browser settings and the destination website.</p>
+        <ul>
+          <li><strong>Quotes:</strong> Enabled by default. When enabled, opening a new tab, refreshing or filling the cache may contact <a href="https://hitokoto.cn/" rel="noreferrer">Hitokoto</a> at <code>https://v1.hitokoto.cn/</code>, with your selected quote categories. These API requests use <code>credentials: 'omit'</code> and do not send cookies. They do not include your bookmarks, quick-access list or search terms. Turning quotes off stops subsequent retrieval; a request already sent may still be processed by the provider.</li>
+          <li><strong>Website icons:</strong> The Dock uses bundled icons when enabled and matched. Otherwise, it loads a saved icon URL or the website’s <code>/favicon.ico</code>. The quick-access list in settings may also load saved icon URLs directly. An icon host can therefore receive a request for its icon even if you have not clicked the shortcut. Enabling bundled icons does not guarantee that settings will make no remote icon requests.</li>
+          <li><strong>Remote backgrounds:</strong> Selecting a URL background retrieves the image from the address you specify and any redirect destination. A gradient, bundled background or local image avoids these remote background requests.</li>
+          <li><strong>Search and navigation:</strong> Submitting a search sends its terms in the query URL to your selected service: currently Google, Baidu, Bing, DuckDuckGo, Startpage or Sogou. Entering a web address or clicking a shortcut visits that website. Each provider applies its own privacy policy. Selecting an engine inside TSTab does not change Edge’s default address-bar search engine.</li>
+        </ul>
+        <p>Hitokoto and built-in search services use HTTPS. User-provided background, shortcut or icon URLs may use HTTP, which lacks HTTPS transport protection; prefer trusted HTTPS addresses. The maintainer does not control third parties’ retention periods, logs, cookies or cross-region processing. Contact the relevant provider about its practices and your rights.</p>
+
+        <h3>4. Permissions</h3>
+        <ul>
+          <li><code>storage</code>: Locally saves settings, manual quick access, local backgrounds and quote cache.</li>
+          <li><code>activeTab</code>: Temporarily reads the current page’s title, URL and icon after you click the toolbar icon, for quick-access actions.</li>
+          <li><code>bookmarks</code>: Reads the bookmark tree for bookmark mode and folder selection.</li>
+          <li><code>https://v1.hitokoto.cn/*</code>: Retrieves quotes, without uploading your quick-access list or bookmarks.</li>
+        </ul>
+
+        <h3>5. Retention, choices and deletion</h3>
+        <p>Local settings, manual quick access, backgrounds and cache remain until you modify, delete or replace them, or remove the extension’s data. The cache is updated during use rather than deleted on a single fixed schedule. Settings let you inspect or edit configuration, remove manual shortcuts, select manual mode to stop bookmark display, turn quotes off, change background sources and clear the quote cache. Clearing the cache while leaving quotes enabled may retrieve content again.</p>
+        <p>To remove all extension-stored data, remove TSTab at <code>edge://extensions/</code>. Browser bookmarks remain; use Edge’s favorites manager to delete them. For web development previews, clear the corresponding site’s storage.</p>
+        <p>Import and export are user-initiated local JSON operations. Backups may include URLs, icons, local background images and cached quotes. They are not encrypted or automatically uploaded by TSTab; keep them private. Uninstalling does not delete exported files or request records retained by third parties.</p>
+
+        <h3>6. This page and support requests</h3>
+        <p>This page includes no analytics scripts, ads, remote fonts or remote images, and does not itself use cookies or browser storage. When hosted on GitHub Pages, GitHub processes information needed to provide hosting, such as visitors’ IP addresses, under its <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noreferrer">Privacy Statement</a>. Following an external link opens a service governed by its own policy.</p>
+        <p>If you contact the maintainer through GitHub, GitHub and the maintainer use the account information and feedback you provide to respond and address the issue. Complete bookmark collections or configuration backups are not needed for general privacy questions.</p>
+
+        <h3>7. Changes</h3>
+        <p>This page and its update date will change when features or data practices change. Additional notice or consent will be provided where required by applicable law or platform rules.</p>
+      </article>
+
+      <section id="contact" aria-labelledby="contact-title">
+        <h2 id="contact-title">联系维护者 / Contact</h2>
+        <p>维护者 / Maintainer: <a href="https://github.com/takuron" rel="noreferrer">takuron</a></p>
+        <p>项目与隐私问题 / Project and privacy questions: <a href="https://github.com/takuron/TSTab/issues" rel="noreferrer">TSTab GitHub Issues</a></p>
+        <p class="meta">GitHub Issues 是公开渠道，请勿提交私人网址、书签、完整备份或其他敏感信息。<br><span lang="en">GitHub Issues is public. Do not post private URLs, bookmarks, complete backups or other sensitive information.</span></p>
+      </section>
+    </main>
+    <footer>TSTab · <a href="#zh">中文</a> · <a href="#en" lang="en">English</a></footer>
+  </div>
+</body>
+</html>
