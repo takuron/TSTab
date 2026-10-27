@@ -11,6 +11,10 @@
 	onMount(startStorageSync);
 </script>
 
+<svelte:head>
+	<meta name="description" content={$_('newtab.description')} />
+</svelte:head>
+
 <slot />
 {#if $operationError}
 	<div role="alert" class="fixed bottom-3 left-3 right-3 z-[2000] p-3 glass-strong rounded-lg text-white flex items-center gap-3">

@@ -36,9 +36,11 @@ pnpm run build
 
 产物输出到 `build/` 目录，包含 `manifest.json`、`newtab.html`、`popup.html` 及静态资源。
 
+商店语言由 `build/_locales/zh_CN/messages.json`、`build/_locales/en/messages.json` 和 manifest 中的消息引用共同声明，默认简体中文。构建会校验这些声明，缺失时直接失败。打包时必须保留 `_locales`（浏览器允许的特殊目录），并让 `manifest.json` 位于 ZIP 根目录。语言详情及提交文案见 [Edge 语言提交说明](edge_i18n.md)。
+
 客户端构建通过 `scripts/bundled-licenses.mjs` 从实际打包模块收集第三方许可，并纳入 Tailwind/DaisyUI 的样式许可；产物附带项目 `LICENSE`、`THIRD_PARTY_LICENSES.txt` 与 `licenses/bundled-packages.json`。素材声明及许可正文由 `static/NOTICE.txt` 和 `static/licenses/` 提供。插件只读取本机已安装包，缺失许可正文时构建失败；不在构建期间联网下载许可。引入新素材或变更来源时需同步更新相应声明。
 
-**必须通过此命令构建**：它会自动执行 `scripts/patch-manifest.mjs`，将 SvelteKit 预渲染页面的内联脚本外部化到 `app/bootstrap/` 并写入 MV3 CSP（详见 `docs/architecture.md` 第 6 节）。注意：Chrome 扩展禁止 `_` 开头的文件/目录名，因此产物目录为 `app/`（由 `svelte.config.js` 的 `kit.appDir` 控制），禁止手改 `build/` 目录下的文件。
+**必须通过此命令构建**：它会自动执行 `scripts/patch-manifest.mjs`，将 SvelteKit 预渲染页面的内联脚本外部化到 `app/bootstrap/` 并写入 MV3 CSP（详见 `docs/architecture.md` 第 6 节）。注意：Chrome 扩展不允许一般资源使用 `_` 开头的文件/目录名（原生 `_locales` 等保留目录除外），因此产物目录为 `app/`（由 `svelte.config.js` 的 `kit.appDir` 控制），禁止手改 `build/` 目录下的文件。
 
 ## 5 加载到浏览器（开发者模式）
 

@@ -1,5 +1,5 @@
 import { derived, get, writable } from 'svelte/store';
-import { _ } from 'svelte-i18n';
+import { _, locale } from 'svelte-i18n';
 import { CACHE_EXPIRY, DEFAULT_CONFIG, HITOKOTO_API, STORAGE_KEYS } from './config';
 import { isExtension, StorageManager } from './storage';
 import { webUrlOrNull } from './search';
@@ -146,7 +146,8 @@ export async function importBackup(data: unknown): Promise<void> {
 export async function exportBackup() {
 	return StorageManager.transaction(async (storage) => {
 		const all = await storage.getAll();
-		return { version: '1.0', exportTime: new Date().toISOString(), exportDate: new Date().toLocaleString(),
+		const now = new Date();
+		return { version: '1.0', exportTime: now.toISOString(), exportDate: now.toLocaleString(get(locale) ?? 'zh-CN'),
 			config: { ...normalizeSettings(all), [STORAGE_KEYS.QUICK_ACCESS]: normalizeQuickAccess(all[STORAGE_KEYS.QUICK_ACCESS] ?? []),
 				[STORAGE_KEYS.QUOTE_CACHE]: normalizeQuoteCache(all[STORAGE_KEYS.QUOTE_CACHE]) ?? emptyQuoteCache() } };
 	});

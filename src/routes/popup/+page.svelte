@@ -7,29 +7,32 @@
 	import { webUrlOrNull } from '$lib/search';
 	import { isExtension } from '$lib/storage';
 
-	let tab = { title: $_('popup.loadingTab'), url: '', icon: '' };
+	let tab = { title: '', url: '', icon: '' };
+	let tabTitleKey = 'popup.loadingTab';
 	let loaded = false;
 	let exists = false;
 	let working = false;
-	let status = null; // { text, type }
+	let status = null; // 保存翻译键与提示类型，切换语言时即时重新翻译。
 	let statusTimer;
 
 	async function loadTab() {
 		if (isExtension()) {
 			const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
 			if (!active) {
-				showStatus($_('popup.statusNoTab'), 'error');
+				showStatus('popup.statusNoTab', 'error');
 				return;
 			}
+			tabTitleKey = 'popup.unknownTab';
 			tab = {
-				title: active.title || $_('popup.unknownTab'),
+				title: active.title || '',
 				url: webUrlOrNull(active.url) || '',
 				icon: faviconFor(active.url, active.favIconUrl)
 			};
 		} else {
 			// 开发调试：以当前地址作为示例
+			tabTitleKey = 'popup.previewTab';
 			tab = {
-				title: $_('popup.previewTab'),
+				title: '',
 				url: window.location.href,
 				icon: ''
 			};
@@ -46,10 +49,10 @@
 		try {
 			await Promise.all([settings.load(), quickAccess.load()]);
 			await loadTab();
-			if (!tab.url) showStatus($_('popup.unsupportedUrl'), 'error');
+			if (!tab.url) showStatus('popup.unsupportedUrl', 'error');
 		} catch (error) {
 			console.error(error);
-			showStatus($_('msg.operationFailed'), 'error');
+			showStatus('msg.operationFailed', 'error');
 		}
 	});
 	onDestroy(() => clearTimeout(statusTimer));
@@ -58,9 +61,9 @@
 		exists = $quickAccess.some((it) => it.url === tab.url);
 	}
 
-	function showStatus(text, type = 'info') {
+	function showStatus(key, type = 'info') {
 		clearTimeout(statusTimer);
-		status = { text, type };
+		status = { key, type };
 		statusTimer = setTimeout(() => (status = null), 3000);
 	}
 
@@ -74,11 +77,11 @@
 				icon: tab.icon,
 				addedAt: Date.now()
 			});
-		if (ok) showStatus($_('popup.statusAdded'), 'success');
-		else showStatus($_('popup.statusAlready'), 'info');
+		if (ok) showStatus('popup.statusAdded', 'success');
+		else showStatus('popup.statusAlready', 'info');
 	} catch (err) {
 		console.error(err);
-		showStatus($_('popup.statusAddFailed'), 'error');
+		showStatus('popup.statusAddFailed', 'error');
 	}
 	working = false;
 }
@@ -89,14 +92,14 @@ async function handleRemove() {
 	try {
 		const index = $quickAccess.findIndex((it) => it.url === tab.url);
 		if (index === -1) {
-			showStatus($_('popup.statusNotIn'), 'info');
+			showStatus('popup.statusNotIn', 'info');
 		} else {
 			await quickAccess.remove($quickAccess[index].id);
-			showStatus($_('popup.statusRemoved'), 'success');
+			showStatus('popup.statusRemoved', 'success');
 		}
 	} catch (err) {
 		console.error(err);
-		showStatus($_('popup.statusRemoveFailed'), 'error');
+		showStatus('popup.statusRemoveFailed', 'error');
 	}
 	working = false;
 }
@@ -129,7 +132,7 @@ async function handleRemove() {
 				<span class="w-8 h-8 rounded-md bg-white/20 flex-shrink-0"></span>
 			{/if}
 			<div class="flex-1 min-w-0">
-				<div class="text-sm font-medium truncate">{tab.title}</div>
+				<div class="text-sm font-medium truncate">{tab.title || $_(tabTitleKey)}</div>
 				<div class="text-xs text-white/70 truncate">{hostOf(tab.url) || tab.url}</div>
 			</div>
 		</div>
@@ -141,7 +144,7 @@ async function handleRemove() {
 					: status.type === 'error' ? 'bg-[#f44336]/20 border border-[#f44336]/40 text-[#ef9a9a]'
 					: 'bg-[#2196f3]/20 border border-[#2196f3]/40 text-[#90caf9]'}"
 			>
-				{status.text}
+				{$_(status.key)}
 			</div>
 		{/if}
 	</div>

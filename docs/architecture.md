@@ -28,7 +28,9 @@ TSTab 是 SvelteKit adapter-static 全预渲染的 Chrome/Edge MV3 新标签页�
 | `src/routes/+layout.svelte` | 全局样式、html lang、存储变更监听、错误提示 |
 | `src/routes/newtab/+page.svelte` | 初始化本地数据，组装新标签页与按需加载一言 |
 | `src/routes/popup/+page.svelte` | 加载语言偏好，读取当前标签页并管理快捷访问 |
-| `tests/helpers.mjs` / `regressions.test.mjs` / `browser-smoke.mjs` | 独立页面上下文、共享锁/存储模拟及临时 Chromium 界面回归 |
+| `static/_locales/zh_CN/messages.json` / `en/messages.json` | 浏览器与商店识别的扩展名称、描述及工具栏标题 |
+| `scripts/extension-locales.mjs` | 校验原生语言目录、默认语言、消息引用与描述长度，供构建和测试复用 |
+| `tests/helpers.mjs` / `regressions.test.mjs` / `i18n.test.mjs` / `browser-smoke.mjs` | 独立页面上下文、共享锁/存储模拟、翻译完整性检查及临时 Chromium 界面回归 |
 
 ## 3 存储与并发
 
@@ -74,7 +76,7 @@ TSTab 是 SvelteKit adapter-static 全预渲染的 Chrome/Edge MV3 新标签页�
 - `static/manifest.json` 是清单来源；权限为 `storage / activeTab / bookmarks`，host permission 仅包含一言域名。
 - popup 通过用户点击工具栏 action 获得当前标签页的临时访问权，不再申请广泛的 `tabs` 权限；不支持加入浏览器内部页等非 HTTP(S) 地址。
 - 必须使用 `pnpm run build`：Vite 预渲染 `/newtab` 与 `/popup`，随后 patch-manifest.mjs 将 HTML 内联脚本外部化到 `build/app/bootstrap/`，移除 modulepreload，写入 `script-src 'self'; object-src 'self'`。
-- `kit.appDir = 'app'` 避免使用保留目录名 `_app`，`paths.relative = false`；禁止手工修改 build。原生扩展本地化的 `_locales` 是允许的特殊目录，但本项目暂未启用。
+- `kit.appDir = 'app'` 避免使用保留目录名 `_app`，`paths.relative = false`；禁止手工修改 build。原生扩展本地化的 `_locales` 是允许的特殊目录，须随静态资源复制进产物。构建补丁调用 `validateExtensionLocales()` 验证最终产物，缺少中文声明或消息引用时构建失败。
 - 运行时脚本与语言包全部本地打包；运行时依赖包含 Svelte 和 svelte-i18n 及其传递依赖。
 - 一言使用 HTTPS JSON API；URL 背景、未命中预置图标的 favicon 会请求相应第三方，搜索提交直接跳转到选定引擎。没有第三方分析或远端上报。
 
@@ -92,4 +94,8 @@ TSTab 是 SvelteKit adapter-static 全预渲染的 Chrome/Edge MV3 新标签页�
 
 语言偏好 `browser / zh-CN / en-US`；`resolveLocale()` 将浏览器 `en` 和全部 `en-*` 归一到 en-US，其他语言回退 zh-CN。固定语言直接使用。设置及 popup 均加载持久化偏好；模块订阅仅在实际语言变化时更新 locale，布局同步 html lang。一言缺省内容由翻译 store 派生，切换语言即时更新。
 
-manifest 品牌文案仍为静态中文；扩展界面的两套语言包不等同于商店原生本地化。
+页面描述、页面标题、许可说明及 popup 占位标题/状态提示随界面语言更新。popup 保存翻译键而不是已翻译文本，避免跨页面切换语言后残留旧文案。备份的 `exportDate` 按界面语言格式化；导入确认优先用标准 `exportTime` 按当前界面语言显示，兼容旧备份的 `exportDate`。一言 API 返回的正文、作者与出处保留原文，不做翻译。
+
+浏览器与商店使用独立的原生本地化：manifest 的 `default_locale` 为 `zh_CN`，`name / description / action.default_title` 使用 `__MSG_*__` 引用。`static/_locales/zh_CN` 对应界面 `zh-CN`，`static/_locales/en` 对应界面 `en-US` 并覆盖英文地区变体。原生元数据由浏览器语言决定，设置中的语言偏好只影响扩展页面。新增语言需同步 `scripts/extension-locales.mjs` 的映射、界面注册、设置校验及完整语言包。
+
+`tests/i18n.test.mjs` 检查双语键与插值参数、实际消息格式化、组件静态文案/可访问性属性、动态翻译引用、原生清单与构建失败分支。商店的完整描述和徽标仍需在后台逐语言填写，详见 [Edge 语言提交说明](edge_i18n.md)。

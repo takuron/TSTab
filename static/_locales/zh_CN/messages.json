@@ -1,0 +1,14 @@
+{
+	"extensionName": {
+		"message": "TSTab",
+		"description": "扩展在浏览器及商店中显示的名称。"
+	},
+	"extensionDescription": {
+		"message": "一个简洁优雅的新标签页，支持自定义背景、每日一言、多引擎搜索，以及网站与书签快捷访问。",
+		"description": "扩展管理页及商店使用的简短介绍。"
+	},
+	"actionTitle": {
+		"message": "添加到快捷访问",
+		"description": "浏览器工具栏扩展按钮的提示。"
+	}
+}

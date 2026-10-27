@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, readdirSync, mkdirSync } from 'node:fs';
 import { dirname, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateExtensionLocales } from './extension-locales.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const staticDir = resolve(root, 'static');
@@ -8,7 +9,10 @@ const buildDir = resolve(root, 'build');
 
 const manifest = JSON.parse(readFileSync(resolve(staticDir, 'manifest.json'), 'utf8'));
 
-// 与 svelte.config.js 的 kit.appDir 保持一致（扩展禁止 '_' 开头目录，故为 'app'）
+// 检查最终产物中确实包含商店需要的原生语言目录与清单引用。
+validateExtensionLocales(buildDir);
+
+// 与 svelte.config.js 的 kit.appDir 保持一致（_locales 是原生本地化特例）。
 const APP_DIR = 'app';
 
 /** 外部化 HTML 中的内联 <script>：写入独立 .js 文件并以 src 引用，

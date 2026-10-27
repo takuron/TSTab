@@ -13,6 +13,8 @@ export interface LicenseEntry {
 	name: string;
 	/** 许可标识（SPDX 标识或素材许可名称） */
 	license: string;
+	/** 可翻译的许可类型键（对应 `settings.licenseLabel.<key>`，可选） */
+	licenseKey?: string;
 	/** 来源地址（仓库 / 官网 / 作品页） */
 	url: string;
 	/** 版权声明等需原样展示、不可翻译的文本（可选） */
@@ -66,8 +68,9 @@ export const ASSET_LICENSES: LicenseEntry[] = [
 		noticeKey: 'unsplash'
 	},
 	{
-		name: 'Hitokoto 一言',
-		license: '第三方 API',
+		name: 'Hitokoto',
+		license: 'Third-party API',
+		licenseKey: 'thirdPartyApi',
 		url: 'https://hitokoto.cn/',
 		noticeKey: 'hitokoto'
 	}

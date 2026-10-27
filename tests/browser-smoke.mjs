@@ -42,16 +42,30 @@ const a=await page('chrome://newtab/');
 await a.until("document.querySelector('input[aria-label]') && typeof chrome.storage !== 'undefined'");
 console.log('newtab',await a.eval('location.href'));
 assert.deepEqual(await a.eval('chrome.runtime.getManifest().permissions'), ['storage', 'activeTab', 'bookmarks']);
+assert.equal(await a.eval('chrome.runtime.getManifest().default_locale'), 'zh_CN');
+assert.equal(await a.eval('chrome.runtime.getManifest().name'), 'TSTab');
+const nativeTitle = await a.eval("chrome.i18n.getMessage('actionTitle')");
+assert.ok(['添加到快捷访问', 'Add to Quick Access'].includes(nativeTitle));
+assert.equal(await a.eval('chrome.runtime.getManifest().action.default_title'), nativeTitle);
+assert.ok(await a.eval("chrome.runtime.getManifest().description === chrome.i18n.getMessage('extensionDescription')"));
 const base=await a.eval('location.origin');
-await a.eval("chrome.storage.local.set({quoteEnabled:false,locale:'en-US',quickAccess:[{id:'a',title:'Alpha',url:'https://github.com/',icon:'',addedAt:1},{id:'b',title:'Beta',url:'https://google.com/',icon:'',addedAt:1}]})");
+// 等待首次迁移写入完成，避免测试数据与初始化的默认设置互相覆盖。
+await a.until("chrome.storage.local.get(['locale','quickAccess']).then(value=>value.locale==='browser' && Array.isArray(value.quickAccess))");
+await a.eval("navigator.locks.request('tstab:storage',()=>chrome.storage.local.set({quoteEnabled:false,locale:'en-US',quickAccess:[{id:'a',title:'Alpha',url:'https://github.com/',icon:'',addedAt:1},{id:'b',title:'Beta',url:'https://google.com/',icon:'',addedAt:1}]}))");
 await a.until("document.documentElement.lang==='en-US' && document.querySelectorAll('nav a').length===2");
+assert.equal(await a.eval('document.title'), 'New Tab');
+assert.match(await a.eval("document.querySelector('meta[name=description]').content"), /A clean new tab/);
 const b=await page(base+'/newtab.html');await b.until("document.documentElement.lang==='en-US' && document.querySelectorAll('nav a').length===2");
 await a.eval("document.querySelector('button[aria-label=\"Open settings\"]').focus();document.querySelector('button[aria-label=\"Open settings\"]').click()");
 await a.until("document.querySelector('dialog')?.open");
 assert.equal(await a.eval("document.activeElement.closest('dialog')!==null"),true);
+assert.ok(await a.eval("document.querySelector('dialog').textContent.includes('Third-party API')"));
 // 通过真实页面选择器修改设置，验证另一页面实时同步。
 await a.eval("{const s=document.querySelector('dialog select[aria-label=Language]');s.value='zh-CN';s.dispatchEvent(new Event('change',{bubbles:true}));}");
 await b.until("document.documentElement.lang==='zh-CN'");
+assert.equal(await b.eval('document.title'), '新标签页');
+assert.match(await b.eval("document.querySelector('meta[name=description]').content"), /简洁的新标签页/);
+assert.ok(await a.eval("document.querySelector('dialog').textContent.includes('第三方 API')"));
 await b.eval("{const s=document.querySelector('select');s.value='google';s.dispatchEvent(new Event('change',{bubbles:true}));}");
 await a.until("document.querySelector('dialog select').value==='google'");
 assert.equal(await a.eval("chrome.storage.local.get(['locale','searchEngine']).then(x=>x.locale==='zh-CN'&&x.searchEngine==='google')"),true);
@@ -86,9 +100,27 @@ await a.eval("document.querySelector('dialog button[aria-label=\"关闭设置\"]
 await a.eval("chrome.storage.local.set({locale:'en-US'})");
 const popup=await page(base+'/popup.html');await popup.until("document.documentElement.lang==='en-US'");
 assert.equal(await popup.eval("document.querySelector('h2').textContent"),'Quick Access');
+assert.equal(await popup.eval('document.title'), 'Add to Quick Access');
+// 模拟无标题的内部页面，确认占位标题与仍显示的状态提示都能随跨页面语言设置刷新。
+await popup.send('Page.enable');
+const injection = await popup.send('Page.addScriptToEvaluateOnNewDocument', { source: "chrome.tabs.query = async () => [{title:'', url:'edge://settings/'}];" });
+await popup.send('Page.reload');
+try {
+	await popup.until("document.body.textContent.includes('Unknown site') && document.body.textContent.includes('Only HTTP(S) web pages can be added.')");
+} catch (error) {
+	console.error('popup language diagnostics', await popup.eval("({text:document.body.textContent,query:chrome.tabs.query.toString()})"), popup.errors);
+	throw error;
+}
+await a.eval("chrome.storage.local.set({locale:'zh-CN'})");
+await popup.until("document.documentElement.lang==='zh-CN' && document.body.textContent.includes('未知网站') && document.body.textContent.includes('仅支持添加 HTTP(S) 网页。')");
+assert.equal(await popup.eval('document.title'), '添加到快捷访问');
+assert.equal(await popup.eval("chrome.runtime.getManifest().action.default_title"), nativeTitle);
+await popup.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: injection.identifier });
+await a.eval("chrome.storage.local.set({locale:'en-US'})");
+await a.until("document.documentElement.lang==='en-US'");
 await a.eval("chrome.storage.local.set({quickAccessMode:'bookmark',bookmarkFolderId:'1'})");
 await a.eval("Promise.all([chrome.bookmarks.create({parentId:'1',title:'Same 1',url:'https://github.com/'}),chrome.bookmarks.create({parentId:'1',title:'Same 2',url:'https://github.com/'})])");
-await a.send('Page.reload');await a.until("document.querySelectorAll('nav a').length===2");
+await a.send('Page.reload');await a.until("Array.from(document.querySelectorAll('nav a')).map(a=>a.textContent.trim()).join(',')==='Same 1,Same 2'");
 assert.equal(await a.eval("Array.from(document.querySelectorAll('nav a')).map(a=>a.textContent.trim()).join(',')"),'Same 1,Same 2');
 await a.send('Emulation.setDeviceMetricsOverride',{width:1280,height:800,deviceScaleFactor:1,mobile:false});
 await a.eval("document.querySelector('button[aria-label=\"Open settings\"]').click()");
@@ -100,7 +132,7 @@ for (let i = 0; i < 30; i++) {
 	assert.equal(await a.eval("!!document.activeElement.closest('dialog')"), true);
 }
 assert.deepEqual(a.errors,[]);assert.deepEqual(b.errors,[]);assert.deepEqual(popup.errors,[]);
-console.log('PASS: extension boot, storage synchronization, language, dialog focus/Escape, copy/drag, keyboard reorder, Dock position, duplicate bookmarks, popup locale, optimistic save on quota error and focus recovery; no runtime exceptions');
+console.log('PASS: extension boot, native locale metadata, storage synchronization, translated metadata/licenses/popup status, dialog focus/Escape, copy/drag, keyboard reorder, Dock position, duplicate bookmarks, optimistic save on quota error and focus recovery; no runtime exceptions');
 } finally {
 	clients.forEach((client) => client.close());
 	processHandle.kill('SIGTERM');

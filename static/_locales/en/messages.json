@@ -1,0 +1,14 @@
+{
+	"extensionName": {
+		"message": "TSTab",
+		"description": "The extension name displayed in the browser and store."
+	},
+	"extensionDescription": {
+		"message": "A clean new tab with custom backgrounds, daily quotes, search, and quick access to your favorite sites or bookmarks.",
+		"description": "The short description used in extension management and store listings."
+	},
+	"actionTitle": {
+		"message": "Add to Quick Access",
+		"description": "The tooltip for the extension's toolbar button."
+	}
+}

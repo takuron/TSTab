@@ -34,7 +34,8 @@
 		"title": "New Tab",
 		"refreshQuote": "Refresh quote",
 		"openSettingsAria": "Open settings",
-		"settings": "Settings"
+		"settings": "Settings",
+		"description": "A clean new tab extension with custom backgrounds, daily quotes, search, and quick access."
 	},
 	"common": {
 		"save": "Save",
@@ -115,7 +116,10 @@
 		"qaTop": "Top",
 		"qaBottom": "Bottom",
 		"bgUrlPlaceholder": "https://example.com/image.jpg",
-		"qaUrlPlaceholder": "https://github.com"
+		"qaUrlPlaceholder": "https://github.com",
+		"licenseLabel": {
+			"thirdPartyApi": "Third-party API"
+		}
 	},
 	"msg": {
 		"bgUrlEmpty": "Please enter an image URL",

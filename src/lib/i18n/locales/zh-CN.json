@@ -34,7 +34,8 @@
 		"title": "新标签页",
 		"refreshQuote": "刷新一言",
 		"openSettingsAria": "打开设置",
-		"settings": "设置"
+		"settings": "设置",
+		"description": "简洁的新标签页扩展，支持自定义背景、每日一言、搜索和快捷访问。"
 	},
 	"common": {
 		"save": "保存",
@@ -115,7 +116,10 @@
 		"qaTop": "顶部",
 		"qaBottom": "底部",
 		"bgUrlPlaceholder": "https://example.com/image.jpg",
-		"qaUrlPlaceholder": "https://github.com"
+		"qaUrlPlaceholder": "https://github.com",
+		"licenseLabel": {
+			"thirdPartyApi": "第三方 API"
+		}
 	},
 	"msg": {
 		"bgUrlEmpty": "请输入图片 URL",

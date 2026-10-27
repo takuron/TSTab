@@ -1,8 +1,9 @@
 {
 	"manifest_version": 3,
-	"name": "TSTab",
+	"name": "__MSG_extensionName__",
+	"default_locale": "zh_CN",
 	"version": "1.0.0",
-	"description": "一个简洁优雅的新标签页，支持自定义背景、每日一言、搜索功能、快捷访问。基于 SvelteKit + Tailwind CSS v4 + DaisyUI 5 构建。",
+	"description": "__MSG_extensionDescription__",
 	"chrome_url_overrides": {
 		"newtab": "newtab.html"
 	},
@@ -19,7 +20,7 @@
 			"48": "icons/icon48.png",
 			"128": "icons/icon128.png"
 		},
-		"default_title": "添加到快捷访问",
+		"default_title": "__MSG_actionTitle__",
 		"default_popup": "popup.html"
 	}
 }

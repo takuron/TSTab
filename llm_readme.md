@@ -23,6 +23,7 @@
 - [一言 API 与双缓存机制](docs/quote_api.md)
 - [TODO 列表与路线图](docs/TODO.md)
 - [变更日志](docs/Changelog.md)
+- [Edge 商店语言声明与提交说明](docs/edge_i18n.md)
 - [隐私政策单页（中英双语）](docs/privacy.html)
 
 ## 3 LLM 编码规范
@@ -92,8 +93,11 @@
 
 界面文案使用 **`svelte-i18n`** 实现多语言（中文默认 + 英文），语言偏好由设置项 `settings.locale` 控制（跟随浏览器 / 固定语言）。详见 `docs/architecture.md` 第 9 节。
 
+浏览器及商店的原生本地化使用 `static/_locales/zh_CN` 与 `static/_locales/en`，manifest 默认语言为 `zh_CN`。注意原生代码使用下划线，界面语言代码使用连字符；两者不可混用。一言服务返回的正文与出处保留原文，不需要翻译。
+
 *   **规则 1：禁止硬编码 UI 文案。** 所有用户可感知的字符串（含 `title` / `aria-label` / `placeholder` / `alert` / `confirm` 文本）必须通过 `$_('key')` 读取；脚本内提示用 `$_('msg.xxx', { values })` 插值。
 *   **规则 2：文案必须双语言。** 新增或修改任何 key，都必须**同时**更新 `src/lib/i18n/locales/zh-CN.json` 与 `en-US.json`，二者键名与层级必须一致。
 *   **规则 3：组件内写法。** 组件统一 `import { _ } from 'svelte-i18n'` 后使用 `$_('key')`。注意 `$_` 是 Svelte 自动订阅语法，仅对**字面命名 `_`** 的 store 生效，禁止改名为 `_t` 等别名。`stores.ts` 等非组件内取文案用 `get(_)('key')`。
 *   **规则 4：语言逻辑集中。** 语言包注册、`init`、与 `settings.locale` 的同步逻辑只放在 `src/lib/i18n/index.js`，不要在组件里重复「选语言」逻辑。
-*   **规则 5：命名空间分组。** 顶级键按功能分 `engine / search / quote / newtab / common / settings / msg / popup / qaDock`；`msg.*` 归提示文本，`settings.*` 归设置面板，`popup.*` 归弹窗。
+*   **规则 5：命名空间分组。** 顶级键按功能分 `engine / search / langs / quote / newtab / common / settings / msg / popup / qaDock`；`msg.*` 归提示文本，`settings.*` 归设置面板，`popup.*` 归弹窗。
+*   **规则 6：维护原生语言声明。** 扩展名称、描述及工具栏标题使用 manifest 的 `__MSG_*__` 引用，同时维护两套 `messages.json`。新增语言需同步 `scripts/extension-locales.mjs` 映射与界面语言配置；禁止在归档扩展时排除 `_locales`。

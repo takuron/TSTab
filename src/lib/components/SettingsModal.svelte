@@ -1,6 +1,6 @@
 <script>
 	// 设置面板：编辑、导入导出及无障碍对话框交互。
-	import { _ } from 'svelte-i18n';
+	import { _, locale } from 'svelte-i18n';
 	import { persistedControl } from '$lib/controls';
 	import { DEFAULT_CONFIG, MAX_IMAGE_SIZE, SEARCH_ENGINES } from '$lib/config';
 	import { SUPPORTED_LOCALES } from '$lib/i18n';
@@ -201,8 +201,10 @@
 			const text = await file.text();
 			const data = JSON.parse(text);
 			validateBackup(data);
-			const confirmMsg = data.exportDate
-				? $_('msg.importConfirmWithDate', { values: { time: data.exportDate } })
+			// 优先按当前界面语言格式化标准时间；旧备份仅有显示日期时继续兼容。
+			const time = data.exportTime ? new Date(data.exportTime).toLocaleString($locale) : data.exportDate;
+			const confirmMsg = time
+				? $_('msg.importConfirmWithDate', { values: { time } })
 				: $_('msg.importConfirm');
 			if (!window.confirm(confirmMsg)) {
 				event.target.value = '';
@@ -567,7 +569,7 @@
 									{#each group as item, i (item.name)}
 										{#if i > 0}<span class="text-white/30"> · </span>{/if}
 										<a href={item.url} target="_blank" rel="noopener noreferrer" class="text-[#399fff] no-underline">{item.name}</a>
-										<span class="text-white/40">({item.license}{#if item.notice} · {item.notice}{/if}{#if item.noticeKey} · {$_('settings.licenseNotice.' + item.noticeKey)}{/if})</span>
+										<span class="text-white/40">({item.licenseKey ? $_('settings.licenseLabel.' + item.licenseKey) : item.license}{#if item.notice} · {item.notice}{/if}{#if item.noticeKey} · {$_('settings.licenseNotice.' + item.noticeKey)}{/if})</span>
 									{/each}
 								</p>
 							{/each}
