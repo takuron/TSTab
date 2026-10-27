@@ -36,6 +36,8 @@ pnpm run build
 
 产物输出到 `build/` 目录，包含 `manifest.json`、`newtab.html`、`popup.html` 及静态资源。
 
+客户端构建通过 `scripts/bundled-licenses.mjs` 从实际打包模块收集第三方许可，并纳入 Tailwind/DaisyUI 的样式许可；产物附带项目 `LICENSE`、`THIRD_PARTY_LICENSES.txt` 与 `licenses/bundled-packages.json`。素材声明及许可正文由 `static/NOTICE.txt` 和 `static/licenses/` 提供。插件只读取本机已安装包，缺失许可正文时构建失败；不在构建期间联网下载许可。引入新素材或变更来源时需同步更新相应声明。
+
 **必须通过此命令构建**：它会自动执行 `scripts/patch-manifest.mjs`，将 SvelteKit 预渲染页面的内联脚本外部化到 `app/bootstrap/` 并写入 MV3 CSP（详见 `docs/architecture.md` 第 6 节）。注意：Chrome 扩展禁止 `_` 开头的文件/目录名，因此产物目录为 `app/`（由 `svelte.config.js` 的 `kit.appDir` 控制），禁止手改 `build/` 目录下的文件。
 
 ## 5 加载到浏览器（开发者模式）
@@ -61,7 +63,7 @@ pnpm run build
 
 `docs/privacy.html` 是独立的中英双语静态单页，样式内嵌，无脚本、远程字体或图片，不依赖扩展构建，可直接打开或由 GitHub Pages 提供。
 
-将该文件提交并推送到计划使用的发布分支后，在仓库 **Settings → Pages → Build and deployment** 选择 **Deploy from a branch**，选取该分支及 **/docs**，保存并等待部署完成。按当前 `takuron/TSTab` 仓库名和默认项目站点配置，政策地址预计为 `https://takuron.github.io/TSTab/privacy.html`；使用自定义域名时以 Pages 后台实际地址为准。提交商店前，在未登录的浏览器窗口中确认实际 HTTPS 地址可访问，再将其填写到隐私政策字段。仅创建文件不代表已部署。
+将该文件提交并推送到计划使用的发布分支后，在仓库 **Settings → Pages → Build and deployment** 选择 **Deploy from a branch**，选取该分支及 **/docs**，保存并等待部署完成。发布者指定的正式政策地址为 `https://takuron.com/TSTab/privacy.html`。提交商店前，在未登录的浏览器窗口中确认该 HTTPS 地址可访问，再将其填写到隐私政策字段。仅创建文件不代表已部署。
 
 页面使用单个 HTML 文件，不需要运行 SvelteKit 构建，也无需设置 Jekyll 主题。站点根路径未提供首页时，请直接访问 `/privacy.html`。发布源为 `/docs` 时，该目录下其他文件也可能被公开访问。
 

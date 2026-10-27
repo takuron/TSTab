@@ -1,0 +1,29 @@
+TSTab
+Project source: https://github.com/takuron/TSTab
+Project license: GNU General Public License, version 3; see LICENSE.
+Bundled software licenses and copyright notices: THIRD_PARTY_LICENSES.txt
+
+Interface reference:
+Snow — https://github.com/ltba/Snow — GPL-3.0
+TSTab is a SvelteKit implementation with modifications described in the
+project source and Changelog. It is not an official release of Snow.
+
+Bundled website icons:
+dashboard-icons — https://github.com/homarr-labs/dashboard-icons
+Copyright (c) 2024 Bjorn Lammers, Meier Lukas, Thomas Camlong and Homarr Labs
+License: Apache-2.0; see licenses/dashboard-icons-LICENSE.txt.
+Individual logos and trademarks remain the property of their owners.
+Their inclusion does not imply endorsement of TSTab.
+
+Bundled default background image:
+Photo by Kévin JINER on Unsplash
+https://unsplash.com/photos/a-snow-covered-mountain-with-a-clear-blue-sky-g-6gKgRC30k
+License: Unsplash License; see licenses/unsplash-LICENSE.txt.
+The background may be cropped, resized or darkened when displayed.
+
+Optional quote service (not executable code):
+Hitokoto — https://hitokoto.cn/ — https://v1.hitokoto.cn/
+Quote content is retrieved at runtime. Source attribution is displayed when
+provided by the service. Third-party content retains its respective rights.
+
+Privacy policy: https://takuron.com/TSTab/privacy.html
