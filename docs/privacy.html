@@ -53,7 +53,7 @@
         <div class="summary">TSTab 的设置和快捷访问保存在您的设备上，维护者不运营用于收集扩展使用数据的服务器。部分功能会直接连接第三方服务；本地存储不代表完全不联网。</div>
 
         <h3>1. 适用范围与维护者</h3>
-        <p>本政策适用于由 GitHub 用户 <a href="https://github.com/takuron" rel="noreferrer">takuron</a> 维护的 TSTab 新标签页扩展及本隐私政策页面，说明扩展中提供新标签页、搜索、快捷访问、背景及一言功能时的数据处理方式。</p>
+        <p>本政策适用于由 GitHub 用户 <a href="https://github.com/takuron" rel="noreferrer">takuron</a> 维护的 TSTab 新标签页扩展及本隐私政策页面，说明扩展在 Google Chrome、Microsoft Edge 等兼容浏览器中提供新标签页、搜索、快捷访问、背景及一言功能时的数据处理方式。</p>
         <p>TSTab 无需注册账户，不内置广告、使用分析、遥测或用户画像，不向维护者上传您的设置、书签、搜索词或背景图片，也不出售这些数据。</p>
 
         <h3>2. 在本机处理的数据</h3>
@@ -72,7 +72,7 @@
           <li><strong>一言：</strong>新安装默认关闭；关闭时不会发起一言 API 请求，您可在设置中主动开启。更新扩展会保留已保存的开关选择，导入配置时采用备份中的选择（未包含此项则默认关闭）。启用时，扩展会在打开新标签页、刷新或补充缓存等情况下连接 <a href="https://hitokoto.cn/" rel="noreferrer">一言</a> 的 <code>https://v1.hitokoto.cn/</code>，发送所选句子分类参数以获取内容。该 API 请求使用 <code>credentials: 'omit'</code>，不附带 Cookie；扩展不把您的书签、快捷访问列表或搜索词放入此请求。您可以在设置中关闭一言，停止后续获取；已发出的请求可能仍由服务方完成处理。</li>
           <li><strong>站点图标：</strong>Dock 命中并启用预置图标时使用本地资源；其他情况下会加载已保存的图标地址或网站根目录的 <code>/favicon.ico</code>。设置中的快捷访问列表也可能直接加载保存的图标地址。因此，即使未点击该快捷访问，图标所在网站仍可能收到请求并得知被请求的图标地址。预置图标开关不保证设置界面也完全不请求远程图标。</li>
           <li><strong>远程背景：</strong>选择 URL 背景后，浏览器会从您指定的地址及其可能的重定向目标获取图片。使用默认图片、渐变或本地图片可避免此类远程背景请求。</li>
-          <li><strong>主动搜索或访问网页：</strong>提交搜索时，搜索词会出现在发送给所选搜索服务的查询 URL 中。目前可选 Google、百度、Bing、DuckDuckGo、Startpage、搜狗。输入网址或点击快捷访问时，浏览器访问相应网站。各服务按其自己的隐私政策处理数据。扩展内选择搜索引擎不会改变 Edge 地址栏的默认搜索引擎。</li>
+          <li><strong>主动搜索或访问网页：</strong>提交搜索时，搜索词会出现在发送给所选搜索服务的查询 URL 中。目前可选 Google、百度、Bing、DuckDuckGo、Startpage、搜狗。输入网址或点击快捷访问时，浏览器访问相应网站。各服务按其自己的隐私政策处理数据。扩展内选择搜索引擎不会改变浏览器地址栏的默认搜索引擎。</li>
         </ul>
         <p>一言和内置搜索服务使用 HTTPS。用户提供的背景、快捷访问或图标地址可能使用 HTTP；此类连接不具备 HTTPS 的传输保护，请优先使用可信的 HTTPS 地址。维护者无法控制第三方服务的数据保存期限、日志、Cookie 或跨地区处理；您可向对应服务了解其政策并行使相关权利。</p>
 
@@ -86,7 +86,7 @@
 
         <h3>5. 保存期限、控制与删除</h3>
         <p>本地设置、手动快捷访问、背景和缓存保留至您修改、删除、替换相关内容，或移除扩展数据。缓存会随功能运行被更新，并不按统一期限自动清除。您可以在设置中查看或编辑配置、移除手动快捷访问、切换到手动模式停止书签展示、关闭一言、切换背景来源，以及清空一言缓存。单独清空缓存而保持一言开启，仍可能重新获取内容。</p>
-        <p>要完整删除扩展保存的数据，可在 <code>edge://extensions/</code> 中移除 TSTab。浏览器书签不由扩展删除；如需删除书签，请使用 Edge 的收藏夹管理功能。若使用网页开发预览，可清除对应站点的存储。</p>
+        <p>要完整删除扩展保存的数据，可在 Chrome 的 <code>chrome://extensions/</code> 或 Edge 的 <code>edge://extensions/</code> 中移除 TSTab。浏览器书签不由扩展删除；如需删除书签，请使用浏览器的书签或收藏夹管理功能。若使用网页开发预览，可清除对应站点的存储。</p>
         <p>您可主动将配置导出到本地 JSON，或从本地 JSON 导入。备份可能包含网页地址、图标、本地背景图片及一言缓存，扩展不对备份加密，也不自动上传；请妥善保管，勿公开分享含私人内容的备份。卸载扩展不会删除已导出的文件，也不会清除第三方服务已保存的请求记录。</p>
 
         <h3>6. 本页面与联系反馈</h3>
@@ -102,7 +102,7 @@
         <div class="summary">TSTab keeps settings and quick-access data on your device. The maintainer does not operate a server to collect extension usage data. Some features connect directly to third parties; local storage does not mean that the extension never connects to the internet.</div>
 
         <h3>1. Scope and maintainer</h3>
-        <p>This policy covers the TSTab new-tab extension maintained by GitHub user <a href="https://github.com/takuron" rel="noreferrer">takuron</a> and this policy page. It describes data handling for the extension’s new-tab, search, quick-access, background and quote features.</p>
+        <p>This policy covers the TSTab new-tab extension maintained by GitHub user <a href="https://github.com/takuron" rel="noreferrer">takuron</a> and this policy page. It describes data handling for the extension’s new-tab, search, quick-access, background and quote features in Google Chrome, Microsoft Edge and compatible browsers.</p>
         <p>TSTab requires no account and includes no advertising, usage analytics, telemetry or profiling. It does not upload your settings, bookmarks, search terms or background images to the maintainer, and does not sell this data.</p>
 
         <h3>2. Data processed on your device</h3>
@@ -121,7 +121,7 @@
           <li><strong>Quotes:</strong> Disabled by default for new installations; no Hitokoto API requests are made while disabled. You can enable quotes in settings. Updates preserve your saved preference; importing a backup uses its saved preference, or defaults to disabled if none is included. When enabled, opening a new tab, refreshing or filling the cache may contact <a href="https://hitokoto.cn/" rel="noreferrer">Hitokoto</a> at <code>https://v1.hitokoto.cn/</code>, with your selected quote categories. These API requests use <code>credentials: 'omit'</code> and do not send cookies. They do not include your bookmarks, quick-access list or search terms. Turning quotes off stops subsequent retrieval; a request already sent may still be processed by the provider.</li>
           <li><strong>Website icons:</strong> The Dock uses bundled icons when enabled and matched. Otherwise, it loads a saved icon URL or the website’s <code>/favicon.ico</code>. The quick-access list in settings may also load saved icon URLs directly. An icon host can therefore receive a request for its icon even if you have not clicked the shortcut. Enabling bundled icons does not guarantee that settings will make no remote icon requests.</li>
           <li><strong>Remote backgrounds:</strong> Selecting a URL background retrieves the image from the address you specify and any redirect destination. A gradient, bundled background or local image avoids these remote background requests.</li>
-          <li><strong>Search and navigation:</strong> Submitting a search sends its terms in the query URL to your selected service: currently Google, Baidu, Bing, DuckDuckGo, Startpage or Sogou. Entering a web address or clicking a shortcut visits that website. Each provider applies its own privacy policy. Selecting an engine inside TSTab does not change Edge’s default address-bar search engine.</li>
+          <li><strong>Search and navigation:</strong> Submitting a search sends its terms in the query URL to your selected service: currently Google, Baidu, Bing, DuckDuckGo, Startpage or Sogou. Entering a web address or clicking a shortcut visits that website. Each provider applies its own privacy policy. Selecting an engine inside TSTab does not change the browser’s default address-bar search engine.</li>
         </ul>
         <p>Hitokoto and built-in search services use HTTPS. User-provided background, shortcut or icon URLs may use HTTP, which lacks HTTPS transport protection; prefer trusted HTTPS addresses. The maintainer does not control third parties’ retention periods, logs, cookies or cross-region processing. Contact the relevant provider about its practices and your rights.</p>
 
@@ -135,7 +135,7 @@
 
         <h3>5. Retention, choices and deletion</h3>
         <p>Local settings, manual quick access, backgrounds and cache remain until you modify, delete or replace them, or remove the extension’s data. The cache is updated during use rather than deleted on a single fixed schedule. Settings let you inspect or edit configuration, remove manual shortcuts, select manual mode to stop bookmark display, turn quotes off, change background sources and clear the quote cache. Clearing the cache while leaving quotes enabled may retrieve content again.</p>
-        <p>To remove all extension-stored data, remove TSTab at <code>edge://extensions/</code>. Browser bookmarks remain; use Edge’s favorites manager to delete them. For web development previews, clear the corresponding site’s storage.</p>
+        <p>To remove all extension-stored data, remove TSTab at <code>chrome://extensions/</code> in Chrome or <code>edge://extensions/</code> in Edge. Browser bookmarks remain; use your browser’s bookmarks or favorites manager to delete them. For web development previews, clear the corresponding site’s storage.</p>
         <p>Import and export are user-initiated local JSON operations. Backups may include URLs, icons, local background images and cached quotes. They are not encrypted or automatically uploaded by TSTab; keep them private. Uninstalling does not delete exported files or request records retained by third parties.</p>
 
         <h3>6. This page and support requests</h3>
