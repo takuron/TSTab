@@ -40,7 +40,7 @@
     <header>
       <p class="brand">TSTab</p>
       <h1>隐私政策 <span lang="en">/ Privacy Policy</span></h1>
-      <p class="meta">生效及更新日期 / Effective and updated: <time datetime="2026-10-20">2026-10-20</time></p>
+      <p class="meta">生效及更新日期 / Effective and updated: <time datetime="2026-10-31">2026-10-31</time></p>
       <nav aria-label="语言与联系方式 / Language and contact">
         <a href="#zh" lang="zh-CN">中文</a>
         <a href="#en" lang="en">English</a>
@@ -69,7 +69,7 @@
         <h3>3. 第三方连接与接收的信息</h3>
         <p>以下连接由您的浏览器直接发起，不经由维护者服务器中转。服务提供方可能接收到 IP 地址、请求时间、请求地址和浏览器发送的常规网络信息；Cookie 等信息是否随请求发送取决于请求类型、浏览器设置和目标网站。</p>
         <ul>
-          <li><strong>一言：</strong>默认开启。启用时，扩展会在打开新标签页、刷新或补充缓存等情况下连接 <a href="https://hitokoto.cn/" rel="noreferrer">一言</a> 的 <code>https://v1.hitokoto.cn/</code>，发送所选句子分类参数以获取内容。该 API 请求使用 <code>credentials: 'omit'</code>，不附带 Cookie；扩展不把您的书签、快捷访问列表或搜索词放入此请求。您可以在设置中关闭一言，停止后续获取；已发出的请求可能仍由服务方完成处理。</li>
+          <li><strong>一言：</strong>新安装默认关闭；关闭时不会发起一言 API 请求，您可在设置中主动开启。更新扩展会保留已保存的开关选择，导入配置时采用备份中的选择（未包含此项则默认关闭）。启用时，扩展会在打开新标签页、刷新或补充缓存等情况下连接 <a href="https://hitokoto.cn/" rel="noreferrer">一言</a> 的 <code>https://v1.hitokoto.cn/</code>，发送所选句子分类参数以获取内容。该 API 请求使用 <code>credentials: 'omit'</code>，不附带 Cookie；扩展不把您的书签、快捷访问列表或搜索词放入此请求。您可以在设置中关闭一言，停止后续获取；已发出的请求可能仍由服务方完成处理。</li>
           <li><strong>站点图标：</strong>Dock 命中并启用预置图标时使用本地资源；其他情况下会加载已保存的图标地址或网站根目录的 <code>/favicon.ico</code>。设置中的快捷访问列表也可能直接加载保存的图标地址。因此，即使未点击该快捷访问，图标所在网站仍可能收到请求并得知被请求的图标地址。预置图标开关不保证设置界面也完全不请求远程图标。</li>
           <li><strong>远程背景：</strong>选择 URL 背景后，浏览器会从您指定的地址及其可能的重定向目标获取图片。使用默认图片、渐变或本地图片可避免此类远程背景请求。</li>
           <li><strong>主动搜索或访问网页：</strong>提交搜索时，搜索词会出现在发送给所选搜索服务的查询 URL 中。目前可选 Google、百度、Bing、DuckDuckGo、Startpage、搜狗。输入网址或点击快捷访问时，浏览器访问相应网站。各服务按其自己的隐私政策处理数据。扩展内选择搜索引擎不会改变 Edge 地址栏的默认搜索引擎。</li>
@@ -118,7 +118,7 @@
         <h3>3. Third-party connections and information received</h3>
         <p>Your browser makes the following requests directly, without a maintainer-operated intermediary. Providers may receive your IP address, request time and address, and ordinary network information sent by the browser. Whether cookies or similar information accompany a request depends on its type, browser settings and the destination website.</p>
         <ul>
-          <li><strong>Quotes:</strong> Enabled by default. When enabled, opening a new tab, refreshing or filling the cache may contact <a href="https://hitokoto.cn/" rel="noreferrer">Hitokoto</a> at <code>https://v1.hitokoto.cn/</code>, with your selected quote categories. These API requests use <code>credentials: 'omit'</code> and do not send cookies. They do not include your bookmarks, quick-access list or search terms. Turning quotes off stops subsequent retrieval; a request already sent may still be processed by the provider.</li>
+          <li><strong>Quotes:</strong> Disabled by default for new installations; no Hitokoto API requests are made while disabled. You can enable quotes in settings. Updates preserve your saved preference; importing a backup uses its saved preference, or defaults to disabled if none is included. When enabled, opening a new tab, refreshing or filling the cache may contact <a href="https://hitokoto.cn/" rel="noreferrer">Hitokoto</a> at <code>https://v1.hitokoto.cn/</code>, with your selected quote categories. These API requests use <code>credentials: 'omit'</code> and do not send cookies. They do not include your bookmarks, quick-access list or search terms. Turning quotes off stops subsequent retrieval; a request already sent may still be processed by the provider.</li>
           <li><strong>Website icons:</strong> The Dock uses bundled icons when enabled and matched. Otherwise, it loads a saved icon URL or the website’s <code>/favicon.ico</code>. The quick-access list in settings may also load saved icon URLs directly. An icon host can therefore receive a request for its icon even if you have not clicked the shortcut. Enabling bundled icons does not guarantee that settings will make no remote icon requests.</li>
           <li><strong>Remote backgrounds:</strong> Selecting a URL background retrieves the image from the address you specify and any redirect destination. A gradient, bundled background or local image avoids these remote background requests.</li>
           <li><strong>Search and navigation:</strong> Submitting a search sends its terms in the query URL to your selected service: currently Google, Baidu, Bing, DuckDuckGo, Startpage or Sogou. Entering a web address or clicking a shortcut visits that website. Each provider applies its own privacy policy. Selecting an engine inside TSTab does not change Edge’s default address-bar search engine.</li>

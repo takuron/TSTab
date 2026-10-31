@@ -2,6 +2,8 @@
 
 本文档说明 TSTab 中「每日一言」依赖的一言 API 结构，以及本项目采用的**双缓存轮换机制**。任何改动一言相关逻辑（`src/lib/stores.ts` 的 `quote` store、`src/lib/types.ts` 的 `QuoteCache`、`src/lib/config.ts` 的 `HITOKOTO_API`）后必须同步更新本文档（见 `llm_readme.md` 3.1 节）。
 
+一言在新安装时默认关闭，关闭时不发起一言 API 请求；用户可在设置中主动开启。更新保留已保存的开关选择；导入备份缺少 `quoteEnabled` 时恢复为关闭。以下缓存与请求流程适用于开启一言后。
+
 ## 1 API 概览
 
 - 端点：`https://v1.hitokoto.cn/`

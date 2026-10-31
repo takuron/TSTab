@@ -97,7 +97,7 @@ test('编辑不能制造重复网址；重复 URL 书签仍保留不同 ID', asy
 });
 
 test('离线刷新先保存使用位，再次打开仍展示已切换内容', async () => {
-	const env = environment({ quoteCache: cache() }), a = env.context();
+	const env = environment({ quoteEnabled: true, quoteCache: cache() }), a = env.context();
 	await a.stores.quote.refresh(); await env.drain();
 	assert.equal(get(a.stores.quote).text, 'B'); assert.equal(env.db.quoteCache.active, 1);
 	await env.context().stores.quote.load(); await env.drain(); assert.equal(env.db.quoteCache.active, 1);
@@ -105,7 +105,7 @@ test('离线刷新先保存使用位，再次打开仍展示已切换内容', as
 
 test('重复刷新合并网络请求，清空后旧响应不能重新写回缓存', async () => {
 	let release; const response = new Promise((resolve) => { release = resolve; }); let requests = 0;
-	const env = environment({ quoteCache: cache() }, { fetch: async () => { requests++; return response; } });
+	const env = environment({ quoteEnabled: true, quoteCache: cache() }, { fetch: async () => { requests++; return response; } });
 	const a = env.context(), b = env.context();
 	await a.stores.quote.refresh(); await b.stores.quote.refresh();
 	assert.equal(requests, 1);
@@ -116,7 +116,7 @@ test('重复刷新合并网络请求，清空后旧响应不能重新写回缓�
 
 test('网络响应等待期间导入配置，旧请求不能覆盖导入缓存', async () => {
 	let release; const response = new Promise((resolve) => { release = resolve; });
-	const env = environment({ quoteCache: cache() }, { fetch: async () => response }), a = env.context();
+	const env = environment({ quoteEnabled: true, quoteCache: cache() }, { fetch: async () => response }), a = env.context();
 	await a.stores.quote.refresh();
 	const imported = cache(); imported.slots[0].data.hitokoto = 'Imported';
 	await a.stores.importBackup({ version: '1.0', config: { quoteCache: imported } });
@@ -126,7 +126,7 @@ test('网络响应等待期间导入配置，旧请求不能覆盖导入缓存',
 
 test('请求超时释放网络锁，离线状态仍保留', async () => {
 	let aborted = false;
-	const env = environment({ quoteCache: cache() }, {
+	const env = environment({ quoteEnabled: true, quoteCache: cache() }, {
 		setTimeout: (fn) => setTimeout(fn, 10),
 		fetch: (_, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => { aborted = true; reject(new Error('aborted')); }))
 	});

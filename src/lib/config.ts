@@ -36,7 +36,7 @@ export const DEFAULT_CONFIG = {
 	backgroundType: 'preset',
 	backgroundImage: 'images/kevin-jiner-g-6gKgRC30k-unsplash.jpg',
 	searchEngine: 'baidu',
-	quoteEnabled: true,
+	quoteEnabled: false,
 	quoteTypes: ['a', 'b', 'c', 'd', 'i'],
 	copyProtection: true,
 	quickAccessPosition: 'bottom',
